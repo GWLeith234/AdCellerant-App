@@ -6,6 +6,7 @@ import type { ParsedDeal } from "@/lib/hubspot";
 import { parseBookedCSV, parseExcelWorkbook } from "@/lib/parsers";
 import FileUpload from "./FileUpload";
 import LoadingSpinner from "./LoadingSpinner";
+import TeamGrid from "./TeamGrid";
 
 const CACHE_KEY = "adcellerant_deals_cache";
 
@@ -232,70 +233,18 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
         />
       </div>
 
-      {/* Deal list preview */}
-      {!state.dealsLoading && state.deals.length > 0 && (
+      {/* Team grid with rep cards + deal tabs */}
+      {!state.dealsLoading && (
         <div className="mt-6">
-          <h3 className="text-white font-semibold mb-3">
-            Pipeline Deals ({repDeals.length})
-          </h3>
-          <div className="space-y-2">
-            {repDeals.slice(0, 20).map((deal) => (
-              <div
-                key={deal.id}
-                className="bg-card border border-border rounded-lg p-4 flex items-center justify-between"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-medium truncate">{deal.name}</span>
-                    {deal.sub && (
-                      <span className="text-muted text-xs truncate">{deal.sub}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className={`text-xs px-2 py-0.5 rounded ${stageColor(deal.cat)}`}>
-                      {deal.stage}
-                    </span>
-                    <span className="text-muted text-xs">{deal.rep}</span>
-                    {deal.stageAge > 0 && (
-                      <span className={`text-xs ${deal.stageAge > 14 ? "text-orange" : "text-muted"}`}>
-                        {deal.stageAge}d in stage
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right ml-4">
-                  <p className="text-orange font-bold">{deal.valShort}</p>
-                  {deal.closeDate && (
-                    <p className="text-muted text-xs">
-                      {new Date(deal.closeDate).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                      })}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-            {repDeals.length > 20 && (
-              <p className="text-muted text-xs text-center py-2">
-                + {repDeals.length - 20} more deals
-              </p>
-            )}
-          </div>
+          <TeamGrid
+            deals={state.deals}
+            booked={state.bookedByRepMonth}
+            targets={state.targetsByRepMonth}
+          />
         </div>
       )}
     </div>
   );
-}
-
-function stageColor(cat: string): string {
-  switch (cat) {
-    case "leads": return "bg-blue/20 text-blue";
-    case "prop": return "bg-amber/20 text-amber";
-    case "neg": return "bg-orange/20 text-orange";
-    case "cw": return "bg-green/20 text-green";
-    default: return "bg-muted/20 text-muted";
-  }
 }
 
 function formatCurrency(val: number): string {
