@@ -54,11 +54,12 @@ interface TeamGridProps {
   deals: ParsedDeal[];
   booked: BookedByRepMonth;
   targets: TargetsByRepMonth;
+  focusedRep?: string | null;
 }
 
 type TabKey = "all" | "neg" | "prop" | "leads";
 
-export default function TeamGrid({ deals, booked, targets }: TeamGridProps) {
+export default function TeamGrid({ deals, booked, targets, focusedRep }: TeamGridProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
 
   // Current month label (short name)
@@ -117,7 +118,7 @@ export default function TeamGrid({ deals, booked, targets }: TeamGridProps) {
             onSelect={(key) => setActiveTab(key as TabKey)}
           />
         </div>
-        <DealGrid deals={filteredDeals} />
+        <DealGrid deals={filteredDeals} columns={focusedRep ? 3 : 4} />
       </div>
     </div>
   );

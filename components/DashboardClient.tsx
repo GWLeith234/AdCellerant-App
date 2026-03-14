@@ -240,6 +240,7 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
             deals={state.deals}
             booked={state.bookedByRepMonth}
             targets={state.targetsByRepMonth}
+            focusedRep={rep}
           />
         </div>
       )}

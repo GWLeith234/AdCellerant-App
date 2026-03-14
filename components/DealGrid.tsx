@@ -5,9 +5,17 @@ import DealCard from "./DealCard";
 
 interface DealGridProps {
   deals: ParsedDeal[];
+  columns?: 3 | 4;
+  onAIClick?: (deal: ParsedDeal) => void;
+  onResearchClick?: (deal: ParsedDeal) => void;
 }
 
-export default function DealGrid({ deals }: DealGridProps) {
+export default function DealGrid({
+  deals,
+  columns = 4,
+  onAIClick,
+  onResearchClick,
+}: DealGridProps) {
   if (deals.length === 0) {
     return (
       <div className="text-center py-12">
@@ -16,10 +24,20 @@ export default function DealGrid({ deals }: DealGridProps) {
     );
   }
 
+  const gridCls =
+    columns === 3
+      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+      : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3";
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className={gridCls}>
       {deals.map((deal) => (
-        <DealCard key={deal.id} deal={deal} />
+        <DealCard
+          key={deal.id}
+          deal={deal}
+          onAIClick={onAIClick}
+          onResearchClick={onResearchClick}
+        />
       ))}
     </div>
   );
