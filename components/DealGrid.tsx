@@ -6,6 +6,7 @@ import DealCard from "./DealCard";
 interface DealGridProps {
   deals: ParsedDeal[];
   columns?: 3 | 4;
+  onDealClick?: (deal: ParsedDeal) => void;
   onAIClick?: (deal: ParsedDeal) => void;
   onResearchClick?: (deal: ParsedDeal) => void;
 }
@@ -13,6 +14,7 @@ interface DealGridProps {
 export default function DealGrid({
   deals,
   columns = 4,
+  onDealClick,
   onAIClick,
   onResearchClick,
 }: DealGridProps) {
@@ -35,6 +37,7 @@ export default function DealGrid({
         <DealCard
           key={deal.id}
           deal={deal}
+          onClick={() => onDealClick?.(deal)}
           onAIClick={onAIClick}
           onResearchClick={onResearchClick}
         />

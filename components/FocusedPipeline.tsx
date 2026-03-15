@@ -8,6 +8,7 @@ import DealGrid from "./DealGrid";
 interface FocusedPipelineProps {
   deals: ParsedDeal[];
   rep: string;
+  onDealClick?: (deal: ParsedDeal) => void;
 }
 
 type FocusedTab = "urgent" | "neg" | "prop" | "leads" | "highval" | "cw";
@@ -18,7 +19,7 @@ function daysUntilClose(closeDate: string): number {
   return Math.ceil((close - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
-export default function FocusedPipeline({ deals, rep }: FocusedPipelineProps) {
+export default function FocusedPipeline({ deals, rep, onDealClick }: FocusedPipelineProps) {
   const repDeals = useMemo(() => deals.filter((d) => d.rep === rep), [deals, rep]);
 
   const counts = useMemo(() => {
@@ -80,7 +81,7 @@ export default function FocusedPipeline({ deals, rep }: FocusedPipelineProps) {
           onSelect={(key) => setActiveTab(key as FocusedTab)}
         />
       </div>
-      <DealGrid deals={filteredDeals} columns={3} />
+      <DealGrid deals={filteredDeals} columns={3} onDealClick={onDealClick} />
     </div>
   );
 }
