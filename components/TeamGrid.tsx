@@ -3,63 +3,20 @@
 import { useState, useMemo } from "react";
 import type { ParsedDeal } from "@/lib/hubspot";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
-import RepCard, { type RepConfig } from "./RepCard";
+import { REP_CONFIGS } from "@/lib/reps";
+import RepCard from "./RepCard";
 import TabBar, { type Tab } from "./TabBar";
 import DealGrid from "./DealGrid";
-
-const REP_CONFIGS: RepConfig[] = [
-  {
-    key: "george",
-    name: "George Leith",
-    role: "VP Sales, North America",
-    photo: "",
-    borderColor: "#FF0000",
-    gradientFrom: "#FF0000",
-    gradientTo: "#8B0000",
-    flag: "ca",
-  },
-  {
-    key: "andy",
-    name: "Andy McNab",
-    role: "Sales Director, UK",
-    photo: "",
-    borderColor: "#012169",
-    gradientFrom: "#012169",
-    gradientTo: "#C8102E",
-    flag: "uk",
-  },
-  {
-    key: "alex",
-    name: "Alex Kirkley",
-    role: "Account Executive, UK",
-    photo: "",
-    borderColor: "#012169",
-    gradientFrom: "#012169",
-    gradientTo: "#C8102E",
-    flag: "uk",
-    isRamp: true,
-  },
-  {
-    key: "vendasta",
-    name: "Vendasta",
-    role: "Channel Partner",
-    photo: "",
-    borderColor: "#2ECC8A",
-    gradientFrom: "#2ECC8A",
-    gradientTo: "#1A9B5C",
-  },
-];
 
 interface TeamGridProps {
   deals: ParsedDeal[];
   booked: BookedByRepMonth;
   targets: TargetsByRepMonth;
-  focusedRep?: string | null;
 }
 
 type TabKey = "all" | "neg" | "prop" | "leads";
 
-export default function TeamGrid({ deals, booked, targets, focusedRep }: TeamGridProps) {
+export default function TeamGrid({ deals, booked, targets }: TeamGridProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
 
   // Current month label (short name)
@@ -118,7 +75,7 @@ export default function TeamGrid({ deals, booked, targets, focusedRep }: TeamGri
             onSelect={(key) => setActiveTab(key as TabKey)}
           />
         </div>
-        <DealGrid deals={filteredDeals} columns={focusedRep ? 3 : 4} />
+        <DealGrid deals={filteredDeals} columns={4} />
       </div>
     </div>
   );

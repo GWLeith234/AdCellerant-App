@@ -1,21 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import type { RepConfig } from "@/lib/reps";
 import FlagBadge from "./FlagBadge";
 import RepStatTile from "./RepStatTile";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
-
-export interface RepConfig {
-  key: string;
-  name: string;
-  role: string;
-  photo: string;
-  borderColor: string;
-  gradientFrom: string;
-  gradientTo: string;
-  flag?: "ca" | "uk";
-  isRamp?: boolean;
-}
 
 interface RepCardProps {
   config: RepConfig;

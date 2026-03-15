@@ -4,9 +4,12 @@ import { useReducer, useEffect, useCallback, useState } from "react";
 import type { AppState, AppAction } from "@/lib/types";
 import type { ParsedDeal } from "@/lib/hubspot";
 import { parseBookedCSV, parseExcelWorkbook } from "@/lib/parsers";
+import { getRepConfig } from "@/lib/reps";
 import FileUpload from "./FileUpload";
 import LoadingSpinner from "./LoadingSpinner";
 import TeamGrid from "./TeamGrid";
+import ScorecardStrip from "./ScorecardStrip";
+import FocusedPipeline from "./FocusedPipeline";
 
 const CACHE_KEY = "adcellerant_deals_cache";
 
@@ -129,39 +132,14 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     }
   }, [setXlLoading, setXlError, setXlSuccess, state.bookedByRepMonth]);
 
-  // Computed stats
-  const totalPipeline = state.deals.reduce((sum, d) => sum + d.val, 0);
-  const dealCount = state.deals.length;
-  const repDeals = rep ? state.deals.filter((d) => d.rep === rep) : state.deals;
-  const repPipeline = repDeals.reduce((sum, d) => sum + d.val, 0);
-
-  const totalBooked = Object.values(state.bookedByRepMonth).reduce(
-    (sum, months) => sum + Object.values(months).reduce((s, v) => s + v, 0),
-    0
-  );
-
-  const hasTargets = Object.keys(state.targetsByRepMonth).length > 0;
+  const repConfig = rep ? getRepConfig(rep) : null;
+  const isFocused = !!rep && !!repConfig;
 
   return (
     <div>
-      {/* Welcome */}
-      <div className="bg-card border border-border rounded-xl p-6">
-        <h2 className="text-xl font-bold text-white mb-2">
-          Welcome, {userName || "User"}
-        </h2>
-        <p className="text-muted text-sm">
-          Logged in as <span className="text-blue">{userEmail}</span>
-          {rep && (
-            <>
-              {" "}&mdash; Rep: <span className="text-orange font-semibold">{rep}</span>
-            </>
-          )}
-        </p>
-      </div>
-
       {/* HubSpot warning */}
       {state.hubspotUnavailable && (
-        <div className="mt-4 bg-amber/10 border border-amber/30 rounded-xl p-4">
+        <div className="mb-4 bg-amber/10 border border-amber/30 rounded-xl p-4">
           <p className="text-amber text-sm font-medium">
             HubSpot unavailable &mdash; showing last session
           </p>
@@ -172,47 +150,14 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
       {state.dealsLoading && <LoadingSpinner message="Loading HubSpot deals..." />}
 
       {state.dealsError && !state.hubspotUnavailable && (
-        <div className="mt-4 bg-orange/10 border border-orange/30 rounded-xl p-4">
+        <div className="mb-4 bg-orange/10 border border-orange/30 rounded-xl p-4">
           <p className="text-orange text-sm font-medium">Failed to load deals</p>
           <p className="text-muted text-xs mt-1">{state.dealsError}</p>
         </div>
       )}
 
-      {/* Stats cards */}
-      {!state.dealsLoading && (
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-muted text-xs uppercase tracking-wider mb-1">Pipeline</p>
-            <p className="text-2xl font-bold text-orange">
-              {formatCurrency(rep ? repPipeline : totalPipeline)}
-            </p>
-            <p className="text-muted text-xs mt-1">
-              {rep ? repDeals.length : dealCount} active deal{(rep ? repDeals.length : dealCount) !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-muted text-xs uppercase tracking-wider mb-1">Booked Revenue</p>
-            <p className="text-2xl font-bold text-green">
-              {totalBooked > 0 ? formatCurrency(totalBooked) : "—"}
-            </p>
-            <p className="text-muted text-xs mt-1">
-              {totalBooked > 0 ? "From uploaded CSV/Excel" : "Upload CSV to populate"}
-            </p>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-muted text-xs uppercase tracking-wider mb-1">Target Tracking</p>
-            <p className="text-2xl font-bold text-white">
-              {hasTargets ? "Loaded" : "—"}
-            </p>
-            <p className="text-muted text-xs mt-1">
-              {hasTargets ? "Targets imported from Excel" : "Upload Excel to populate"}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* File uploads */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <FileUpload
           label="Upload Booked Revenue CSV"
           accept=".csv"
@@ -233,27 +178,27 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
         />
       </div>
 
-      {/* Team grid with rep cards + deal tabs */}
-      {!state.dealsLoading && (
-        <div className="mt-6">
-          <TeamGrid
-            deals={state.deals}
+      {/* Focused rep view */}
+      {!state.dealsLoading && isFocused && repConfig && (
+        <>
+          <ScorecardStrip
+            config={repConfig}
             booked={state.bookedByRepMonth}
             targets={state.targetsByRepMonth}
-            focusedRep={rep}
           />
-        </div>
+          <FocusedPipeline deals={state.deals} rep={rep} />
+        </>
+      )}
+
+      {/* Team view */}
+      {!state.dealsLoading && !isFocused && (
+        <TeamGrid
+          deals={state.deals}
+          booked={state.bookedByRepMonth}
+          targets={state.targetsByRepMonth}
+        />
       )}
     </div>
   );
-}
-
-function formatCurrency(val: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(val);
 }
 
