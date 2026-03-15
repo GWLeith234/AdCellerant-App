@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
     error: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "dev-fallback-secret-change-in-production",
 };
 
 const repMap: Record<string, string> = {
