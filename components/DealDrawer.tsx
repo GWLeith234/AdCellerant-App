@@ -53,6 +53,11 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   // --- Research panel state ---
   const [showResearch, setShowResearch] = useState(false);
 
+  // --- Research note state ---
+  const [researchNote, setResearchNote] = useState("");
+  const [researchNoteStatus, setResearchNoteStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [researchNoteError, setResearchNoteError] = useState<string | null>(null);
+
   // Reset all states when deal changes
   useEffect(() => {
     setLogText("");
@@ -66,6 +71,9 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setEmailLoading(false);
     setEmailCopied(false);
     setShowResearch(false);
+    setResearchNote("");
+    setResearchNoteStatus("idle");
+    setResearchNoteError(null);
   }, [deal?.id]);
 
   // Close on Escape
@@ -190,6 +198,27 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setEmailCopied(true);
     setTimeout(() => setEmailCopied(false), 2000);
   }, [emailSubject, emailBody]);
+
+  const handleAddResearchNote = useCallback(async () => {
+    if (!deal || !researchNote.trim()) return;
+    setResearchNoteStatus("saving");
+    setResearchNoteError(null);
+    try {
+      const res = await fetch(`/api/hubspot/deal/${deal.id}/research-note`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: researchNote.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to save research note");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResearchNoteStatus("saved");
+      setResearchNote("");
+    } catch (err) {
+      setResearchNoteError(err instanceof Error ? err.message : "Save failed");
+      setResearchNoteStatus("error");
+    }
+  }, [deal, researchNote]);
 
   if (!deal) return null;
 
@@ -383,7 +412,40 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               )}
             </DrawerSection>
 
-            {/* Section 4: MEDDIC */}
+            {/* Section 4: Add Research Note */}
+            <DrawerSection title="Add Research Note">
+              <textarea
+                value={researchNote}
+                onChange={(e) => setResearchNote(e.target.value)}
+                placeholder="Add research notes, meeting outcomes, or intel to the deal record..."
+                className="w-full bg-navy/50 border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted resize-none focus:outline-none focus:border-blue"
+                rows={3}
+              />
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  onClick={handleAddResearchNote}
+                  disabled={!researchNote.trim() || researchNoteStatus === "saving"}
+                  className="bg-[#7C3AED]/20 text-[#7C3AED] text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-[#7C3AED]/30 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {researchNoteStatus === "saving" ? (
+                    <>
+                      <span className="w-3 h-3 border-2 border-[#7C3AED] border-t-transparent rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Append to Deal"
+                  )}
+                </button>
+                {researchNoteStatus === "saved" && (
+                  <span className="text-green text-xs">Note saved to HubSpot</span>
+                )}
+                {researchNoteError && (
+                  <span className="text-orange text-xs">{researchNoteError}</span>
+                )}
+              </div>
+            </DrawerSection>
+
+            {/* Section 5: MEDDIC */}
             <DrawerSection title="MEDDIC">
               <MeddicGrid meddic={deal.meddic} />
             </DrawerSection>

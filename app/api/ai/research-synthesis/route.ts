@@ -49,14 +49,18 @@ Stage: ${deal.stage} (${deal.stageAge} days in stage)
 Value: ${deal.valShort} ($${deal.val})
 Close date: ${deal.closeDate || "Not set"}
 Persona: ${deal.persona || "Not set"}
+Revenue Line: ${deal.revenueLine || "Not set"}
 Rep: ${deal.rep}
 Contacts: ${contactsStr}
 MEDDIC: ${meddicEntries}
 Documents: ${docStatus}
 Actions: ${deal.action1} / ${deal.action2}
 
-Full description/research notes:
-${deal.description || "No research notes on file."}
+Research notes (accumulated across stages):
+${deal.researchNotes || "No research notes on file."}
+
+Full description field:
+${deal.description || "No description."}
 
 Return a JSON object with this exact structure:
 {

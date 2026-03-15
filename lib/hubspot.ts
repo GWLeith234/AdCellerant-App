@@ -12,6 +12,8 @@ const DEAL_PROPERTIES = [
   "hs_deal_stage_probability",
   "createdate",
   "notes_last_updated",
+  "persona_type",
+  "revenue_line",
 ];
 
 const STAGE_MAP: Record<string, { category: string; probability: number; label: string; stageClass: string }> = {
@@ -67,6 +69,7 @@ export interface ParsedDeal {
   closeDate: string;
   stageAge: number;
   persona: string;
+  revenueLine: string;
   meddic: MeddicScore;
   contacts: ContactInfo[];
   nda: string;
@@ -76,6 +79,7 @@ export interface ParsedDeal {
   bizdev: string;
   partner: string;
   hasResearch: boolean;
+  researchNotes: string;
   action1: string;
   action2: string;
   hsId: string;
@@ -95,14 +99,85 @@ function daysSince(dateStr: string): number {
   return Math.floor((now - then) / (1000 * 60 * 60 * 24));
 }
 
-function parseSection(description: string, tag: string): string {
+// --- Stage block parser ---
+// Splits description into stage blocks: [STAGE N — DATE] ... content ...
+// Returns array of { stageNum, date, content } sorted by stageNum ascending.
+// The "latest" block is the last one (highest stage number).
+
+interface StageBlock {
+  stageNum: number;
+  date: string;
+  content: string;
+}
+
+function parseStageBlocks(description: string): StageBlock[] {
+  if (!description) return [];
+
+  const blockRegex = /\[STAGE\s+(\d+)\s*[—–-]\s*(\d{4}-\d{2}-\d{2})\]/gi;
+  const matches: RegExpExecArray[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = blockRegex.exec(description)) !== null) {
+    matches.push(m);
+  }
+
+  if (matches.length === 0) {
+    // Legacy format: treat entire description as a single block
+    return [{ stageNum: 0, date: "", content: description }];
+  }
+
+  const blocks: StageBlock[] = [];
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const start = match.index! + match[0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index! : description.length;
+    blocks.push({
+      stageNum: parseInt(match[1], 10),
+      date: match[2],
+      content: description.slice(start, end).trim(),
+    });
+  }
+
+  return blocks.sort((a, b) => a.stageNum - b.stageNum);
+}
+
+// Extract a [TAG] value from a stage block's content (first line only for structured tags)
+function parseSection(content: string, tag: string): string {
   const regex = new RegExp(`\\[${tag}\\]\\s*(.+?)(?:\\n|$)`, "i");
-  const match = description.match(regex);
+  const match = content.match(regex);
   return match ? match[1].trim() : "";
 }
 
+// Get the latest stage block content, or entire description for legacy format
+function getLatestBlockContent(description: string): string {
+  const blocks = parseStageBlocks(description);
+  if (blocks.length === 0) return "";
+  return blocks[blocks.length - 1].content;
+}
+
+// Extract freeform research notes from all stage blocks.
+// Research notes are text after the structured tag lines and "---" separator.
+function extractResearchNotes(description: string): string {
+  const blocks = parseStageBlocks(description);
+  const notes: string[] = [];
+
+  for (const block of blocks) {
+    // Split content by "---" separator — freeform text is after it
+    const separatorIdx = block.content.indexOf("---");
+    if (separatorIdx >= 0) {
+      const freeform = block.content.slice(separatorIdx + 3).trim();
+      if (freeform) {
+        const header = block.date ? `[Stage ${block.stageNum} — ${block.date}]` : "";
+        notes.push(header ? `${header}\n${freeform}` : freeform);
+      }
+    }
+  }
+
+  return notes.join("\n\n");
+}
+
 function parseMeddic(description: string): MeddicScore {
-  const raw = parseSection(description, "MEDDIC");
+  const latestContent = getLatestBlockContent(description);
+  const raw = parseSection(latestContent, "MEDDIC");
   const defaults: MeddicScore = {
     metrics: "",
     econBuyer: "",
@@ -119,8 +194,11 @@ function parseMeddic(description: string): MeddicScore {
     const k = key?.toLowerCase();
     if (k === "metrics") defaults.metrics = val || "";
     else if (k === "econbuyer") defaults.econBuyer = val || "";
+    else if (k === "criteria") defaults.decisionCriteria = val || "";
     else if (k === "decisioncriteria") defaults.decisionCriteria = val || "";
+    else if (k === "process") defaults.decisionProcess = val || "";
     else if (k === "decisionprocess") defaults.decisionProcess = val || "";
+    else if (k === "pain") defaults.identifyPain = val || "";
     else if (k === "identifypain") defaults.identifyPain = val || "";
     else if (k === "champion") defaults.champion = val || "";
   }
@@ -128,7 +206,8 @@ function parseMeddic(description: string): MeddicScore {
 }
 
 function parseDocs(description: string): DealDocs {
-  const raw = parseSection(description, "DOCS");
+  const latestContent = getLatestBlockContent(description);
+  const raw = parseSection(latestContent, "DOCS");
   const defaults: DealDocs = {
     nda: "",
     msa: "",
@@ -151,7 +230,8 @@ function parseDocs(description: string): DealDocs {
 }
 
 function parseContacts(description: string): ContactInfo[] {
-  const raw = parseSection(description, "CONTACTS");
+  const latestContent = getLatestBlockContent(description);
+  const raw = parseSection(latestContent, "CONTACTS");
   if (!raw) return [];
 
   return raw.split(",").map((c) => {
@@ -181,6 +261,27 @@ function determineActions(cat: string, docs: DealDocs, meddic: MeddicScore): [st
   return ["Review Deal", "Update Status"];
 }
 
+const PERSONA_LABELS: Record<string, string> = {
+  partner_media: "Partner Media",
+  partner_agency: "Partner Agency",
+  enterprise_brand: "Enterprise Brand",
+  vendasta: "Vendasta",
+};
+
+const REVENUE_LINE_LABELS: Record<string, string> = {
+  canada: "Canada",
+  vendasta: "Vendasta",
+  uk: "UK",
+};
+
+function formatPersonaType(val: string): string {
+  return PERSONA_LABELS[val] || val;
+}
+
+function formatRevenueLine(val: string): string {
+  return REVENUE_LINE_LABELS[val] || val;
+}
+
 export function parseDealFromHubSpot(deal: {
   id: string;
   properties: Record<string, string>;
@@ -198,8 +299,20 @@ export function parseDealFromHubSpot(deal: {
   const docs = parseDocs(description);
   const meddic = parseMeddic(description);
   const contacts = parseContacts(description);
-  const persona = parseSection(description, "PERSONA");
-  const hasResearch = parseSection(description, "RESEARCH").toLowerCase() === "true";
+  const latestContent = getLatestBlockContent(description);
+
+  // Persona: prefer custom property, fall back to description tag
+  const persona = props.persona_type
+    ? formatPersonaType(props.persona_type)
+    : parseSection(latestContent, "PERSONA");
+
+  // Revenue line from custom property
+  const revenueLine = props.revenue_line
+    ? formatRevenueLine(props.revenue_line)
+    : "";
+
+  const hasResearch = parseSection(latestContent, "RESEARCH").toLowerCase() === "true";
+  const researchNotes = extractResearchNotes(description);
   const [action1, action2] = determineActions(stageInfo.category, docs, meddic);
 
   const dealName = props.dealname || "";
@@ -218,10 +331,12 @@ export function parseDealFromHubSpot(deal: {
     closeDate: props.closedate || "",
     stageAge: daysSince(props.hs_lastmodifieddate),
     persona,
+    revenueLine,
     meddic,
     contacts,
     ...docs,
     hasResearch,
+    researchNotes,
     action1,
     action2,
     hsId: deal.id,
@@ -336,6 +451,82 @@ export async function addNoteToDeal(dealId: string, noteBody: string): Promise<v
   if (!res.ok) {
     throw new Error(`HubSpot note error: ${res.status}`);
   }
+}
+
+export async function appendResearchNote(dealId: string, note: string): Promise<string> {
+  // Fetch current description
+  const res = await fetch(
+    `${BASE_URL}/crm/v3/objects/deals/${dealId}?properties=description`,
+    {
+      headers: {
+        Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`HubSpot fetch error: ${res.status}`);
+  }
+
+  const deal = await res.json();
+  const currentDesc = deal.properties.description || "";
+  const timestamp = new Date().toISOString().split("T")[0];
+  const timestampedNote = `[${timestamp}] ${note}`;
+
+  // Determine where to append:
+  // If there are stage blocks, append inside the last block's freeform area.
+  // If no stage blocks, just append at the end.
+  let newDesc: string;
+  const blocks = parseStageBlocks(currentDesc);
+  const lastBlock = blocks[blocks.length - 1];
+
+  if (lastBlock && lastBlock.stageNum > 0) {
+    // Find the last stage block in the raw text and append after its content
+    const lastStageRegex = new RegExp(
+      `(\\[STAGE\\s+${lastBlock.stageNum}\\s*[—–-]\\s*${lastBlock.date}\\])`,
+      "i"
+    );
+    const match = currentDesc.match(lastStageRegex);
+    if (match && match.index !== undefined) {
+      const blockStart = match.index + match[0].length;
+      // Find the content section — look for "---" separator
+      const afterBlock = currentDesc.slice(blockStart);
+      const sepIdx = afterBlock.indexOf("---");
+      if (sepIdx >= 0) {
+        // Append after existing freeform content
+        const insertPos = blockStart + afterBlock.length;
+        newDesc = currentDesc.slice(0, insertPos).trimEnd() + "\n" + timestampedNote + "\n";
+      } else {
+        // No separator yet — add one and the note
+        newDesc = currentDesc.trimEnd() + "\n---\n" + timestampedNote + "\n";
+      }
+    } else {
+      newDesc = currentDesc.trimEnd() + "\n\n" + timestampedNote + "\n";
+    }
+  } else {
+    // Legacy format or empty — just append
+    newDesc = currentDesc
+      ? currentDesc.trimEnd() + "\n\n---\n" + timestampedNote + "\n"
+      : timestampedNote;
+  }
+
+  // Update the description
+  const updateRes = await fetch(`${BASE_URL}/crm/v3/objects/deals/${dealId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ properties: { description: newDesc } }),
+  });
+
+  if (!updateRes.ok) {
+    throw new Error(`HubSpot update error: ${updateRes.status}`);
+  }
+
+  return newDesc;
 }
 
 export { STAGE_MAP, OWNER_MAP, TRACKED_OWNER_IDS };
