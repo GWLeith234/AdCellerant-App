@@ -133,6 +133,28 @@ vendasta.png -- Vendasta logo
 logo.png     -- AdCellerant white wordmark
 ```
 
+## Deployment (Railway)
+
+1. Go to [railway.app](https://railway.app) and create a new project
+2. Connect your GitHub repository
+3. Railway auto-detects `railway.toml` and builds with Nixpacks
+4. Add all environment variables in Railway dashboard (Variables tab):
+   - Set `NEXTAUTH_URL` to your Railway public URL (e.g. `https://your-app.up.railway.app`)
+5. Deploy -- builds automatically on push
+6. Configure Google OAuth redirect URI: `https://your-app.up.railway.app/api/auth/callback/google`
+
+### Railway Quick Deploy (CLI)
+
+```bash
+railway login
+railway init
+railway up
+# Then add env vars:
+railway variables set GOOGLE_CLIENT_ID=...
+railway variables set GOOGLE_CLIENT_SECRET=...
+# ... etc
+```
+
 ## Deployment (Vercel)
 
 1. Connect the GitHub repository to Vercel
