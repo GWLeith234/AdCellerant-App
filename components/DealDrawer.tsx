@@ -7,6 +7,7 @@ import DrawerSection from "./DrawerSection";
 import MeddicGrid from "./MeddicGrid";
 import ContactsList from "./ContactsList";
 import DocStatusGrid from "./DocStatusGrid";
+import ResearchPanel from "./ResearchPanel";
 
 interface DealDrawerProps {
   deal: ParsedDeal | null;
@@ -16,51 +17,67 @@ interface DealDrawerProps {
 const HUBSPOT_PORTAL = "47345959";
 
 const TONE_OPTIONS = [
-  { key: "professional", label: "Professional" },
-  { key: "friendly", label: "Friendly" },
-  { key: "urgent", label: "Urgent" },
-  { key: "followup", label: "Follow-up" },
-  { key: "closing", label: "Closing" },
+  { key: "warm", label: "Warm & Relationship" },
+  { key: "direct", label: "Direct & Commercial" },
+  { key: "followup", label: "Follow-Up" },
+  { key: "urgency", label: "Urgency / Close" },
+  { key: "checkin", label: "Check-In" },
 ] as const;
 
 type ToneKey = (typeof TONE_OPTIONS)[number]["key"];
 
-interface LogPreviewRow {
-  change: string;
-  current: string;
-  newVal: string;
+interface LogOp {
+  type: string;
+  field: string;
+  currentValue: string;
+  newValue: string;
+  hubspotProperty: string | null;
+  hubspotValue: string;
 }
 
 export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
-  // --- State for all AI/action panels ---
+  // --- Log to HubSpot state ---
   const [logText, setLogText] = useState("");
-  const [logPreview, setLogPreview] = useState<LogPreviewRow[] | null>(null);
+  const [logOps, setLogOps] = useState<LogOp[] | null>(null);
+  const [logSummary, setLogSummary] = useState("");
   const [logStatus, setLogStatus] = useState<"idle" | "parsing" | "saving" | "saved" | "error">("idle");
   const [logError, setLogError] = useState<string | null>(null);
 
-  const [emailTone, setEmailTone] = useState<ToneKey>("professional");
+  // --- Draft email state ---
+  const [emailTone, setEmailTone] = useState<ToneKey>("warm");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailCopied, setEmailCopied] = useState(false);
 
+  // --- Research panel state ---
+  const [showResearch, setShowResearch] = useState(false);
+
   // Reset all states when deal changes
   useEffect(() => {
     setLogText("");
-    setLogPreview(null);
+    setLogOps(null);
+    setLogSummary("");
     setLogStatus("idle");
     setLogError(null);
-    setEmailTone("professional");
+    setEmailTone("warm");
     setEmailSubject("");
     setEmailBody("");
     setEmailLoading(false);
     setEmailCopied(false);
+    setShowResearch(false);
   }, [deal?.id]);
 
   // Close on Escape
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (showResearch) {
+          setShowResearch(false);
+        } else {
+          onClose();
+        }
+      }
     }
     if (deal) {
       document.addEventListener("keydown", handleKey);
@@ -70,70 +87,93 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = "";
     };
-  }, [deal, onClose]);
+  }, [deal, onClose, showResearch]);
 
+  // --- 7A: Parse & Preview ---
   const handleParsePreview = useCallback(async () => {
     if (!logText.trim() || !deal) return;
     setLogStatus("parsing");
     setLogError(null);
     try {
-      // Simple client-side parsing of log text into preview rows
-      const lines = logText.trim().split("\n").filter(Boolean);
-      const rows: LogPreviewRow[] = lines.map((line) => {
-        const parts = line.split(":").map((s) => s.trim());
-        return {
-          change: parts[0] || line,
-          current: "—",
-          newVal: parts.slice(1).join(":").trim() || line,
-        };
+      const res = await fetch("/api/ai/parse-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: logText, deal }),
       });
-      setLogPreview(rows);
+      if (!res.ok) throw new Error("Parse failed");
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setLogOps(data.ops || []);
+      setLogSummary(data.summary || "");
       setLogStatus("idle");
-    } catch {
-      setLogError("Failed to parse log entry");
+    } catch (err) {
+      setLogError(err instanceof Error ? err.message : "Parse failed");
       setLogStatus("error");
     }
   }, [logText, deal]);
 
+  // --- 7A: Confirm & execute ---
   const handleConfirmLog = useCallback(async () => {
-    if (!deal) return;
+    if (!deal || !logOps) return;
     setLogStatus("saving");
     setLogError(null);
     try {
-      const res = await fetch(`/api/hubspot/deal/${deal.id}/note`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: logText }),
-      });
-      if (!res.ok) throw new Error("Failed to save note");
+      // Execute property updates
+      const propUpdates: Record<string, string> = {};
+      const notes: string[] = [];
+
+      for (const op of logOps) {
+        if (op.type === "add_note") {
+          notes.push(op.hubspotValue);
+        } else if (op.hubspotProperty) {
+          propUpdates[op.hubspotProperty] = op.hubspotValue;
+        }
+      }
+
+      // PATCH deal properties if any
+      if (Object.keys(propUpdates).length > 0) {
+        const patchRes = await fetch(`/api/hubspot/deal/${deal.id}/update`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ properties: propUpdates }),
+        });
+        if (!patchRes.ok) throw new Error("Failed to update deal properties");
+      }
+
+      // POST notes if any
+      for (const note of notes) {
+        const noteRes = await fetch(`/api/hubspot/deal/${deal.id}/note`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ note }),
+        });
+        if (!noteRes.ok) throw new Error("Failed to add note");
+      }
+
       setLogStatus("saved");
       setLogText("");
-      setLogPreview(null);
+      setLogOps(null);
+      setLogSummary("");
     } catch (err) {
       setLogError(err instanceof Error ? err.message : "Save failed");
       setLogStatus("error");
     }
-  }, [deal, logText]);
+  }, [deal, logOps]);
 
+  // --- 7B: Generate email ---
   const handleGenerateEmail = useCallback(async () => {
     if (!deal) return;
     setEmailLoading(true);
+    setEmailCopied(false);
     try {
-      const res = await fetch("/api/ai/email", {
+      const res = await fetch("/api/ai/draft-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dealName: deal.name,
-          dealSub: deal.sub,
-          persona: deal.persona,
-          stage: deal.stage,
-          contacts: deal.contacts,
-          tone: emailTone,
-          val: deal.valShort,
-        }),
+        body: JSON.stringify({ deal, tone: emailTone }),
       });
       if (!res.ok) throw new Error("Email generation failed");
       const data = await res.json();
+      if (data.error) throw new Error(data.error);
       setEmailSubject(data.subject || "");
       setEmailBody(data.body || "");
     } catch {
@@ -158,10 +198,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/60 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
 
       {/* Drawer */}
       <div className="fixed top-0 right-0 h-full w-[480px] max-w-full bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
@@ -177,7 +214,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto">
-          {/* Hero */}
           <DrawerHero deal={deal} />
 
           <div className="px-6 pb-6">
@@ -191,14 +227,23 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                   {deal.action2}
                 </button>
               </div>
+              {/* AI Research button in action area */}
+              {deal.hasResearch && (
+                <button
+                  onClick={() => setShowResearch(true)}
+                  className="mt-2 w-full bg-[#7C3AED]/15 text-[#7C3AED] text-sm font-medium py-2 rounded-lg hover:bg-[#7C3AED]/25 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>&#10022;</span> View Research Brief
+                </button>
+              )}
             </DrawerSection>
 
-            {/* Section 2: Log to HubSpot */}
+            {/* Section 2: Log to HubSpot (7A) */}
             <DrawerSection title="Log to HubSpot">
               <textarea
                 value={logText}
                 onChange={(e) => setLogText(e.target.value)}
-                placeholder="Enter notes to log to this deal..."
+                placeholder='Plain English: "Move close date to April 15, add a note that Sam confirmed SOW receipt"'
                 className="w-full bg-navy/50 border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted resize-none focus:outline-none focus:border-blue"
                 rows={3}
               />
@@ -206,14 +251,25 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                 <button
                   onClick={handleParsePreview}
                   disabled={!logText.trim() || logStatus === "parsing"}
-                  className="bg-amber/20 text-amber text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-amber/30 transition-colors disabled:opacity-50"
+                  className="bg-amber/20 text-amber text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-amber/30 transition-colors disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  Parse & Preview
+                  {logStatus === "parsing" ? (
+                    <>
+                      <span className="w-3 h-3 border-2 border-amber border-t-transparent rounded-full animate-spin" />
+                      Parsing...
+                    </>
+                  ) : (
+                    "Parse & Preview"
+                  )}
                 </button>
               </div>
 
-              {logPreview && (
+              {/* Preview table */}
+              {logOps && logOps.length > 0 && (
                 <div className="mt-3">
+                  {logSummary && (
+                    <p className="text-muted text-xs mb-2">{logSummary}</p>
+                  )}
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="text-muted">
@@ -223,11 +279,17 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {logPreview.map((row, i) => (
+                      {logOps.map((op, i) => (
                         <tr key={i} className="border-t border-border">
-                          <td className="py-1.5 text-white">{row.change}</td>
-                          <td className="py-1.5 text-muted">{row.current}</td>
-                          <td className="py-1.5 text-green">{row.newVal}</td>
+                          <td className="py-1.5 text-white">{op.field}</td>
+                          <td className="py-1.5 text-muted">{op.currentValue}</td>
+                          <td className="py-1.5 text-green">
+                            {op.type === "add_note" ? (
+                              <span className="italic">{op.newValue}</span>
+                            ) : (
+                              op.newValue
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -241,7 +303,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       {logStatus === "saving" ? "Saving..." : "Confirm"}
                     </button>
                     <button
-                      onClick={() => { setLogPreview(null); setLogStatus("idle"); }}
+                      onClick={() => { setLogOps(null); setLogSummary(""); setLogStatus("idle"); }}
                       className="bg-navy/50 text-muted text-xs font-medium px-3 py-1.5 rounded-lg hover:text-white transition-colors"
                     >
                       Cancel
@@ -251,14 +313,14 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               )}
 
               {logStatus === "saved" && (
-                <p className="text-green text-xs mt-2">Note saved to HubSpot</p>
+                <p className="text-green text-xs mt-2">Changes saved to HubSpot</p>
               )}
               {logError && (
                 <p className="text-orange text-xs mt-2">{logError}</p>
               )}
             </DrawerSection>
 
-            {/* Section 3: Draft Client Email */}
+            {/* Section 3: Draft Client Email (7B) */}
             <DrawerSection title="Draft Client Email">
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {TONE_OPTIONS.map((tone) => (
@@ -381,6 +443,11 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
           </div>
         </div>
       </div>
+
+      {/* 7C: Research Panel (full-screen over drawer) */}
+      {showResearch && (
+        <ResearchPanel deal={deal} onClose={() => setShowResearch(false)} />
+      )}
     </>
   );
 }

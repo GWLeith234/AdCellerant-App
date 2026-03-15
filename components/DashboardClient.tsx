@@ -11,6 +11,7 @@ import TeamGrid from "./TeamGrid";
 import ScorecardStrip from "./ScorecardStrip";
 import FocusedPipeline from "./FocusedPipeline";
 import DealDrawer from "./DealDrawer";
+import ResearchRequestModal from "./ResearchRequestModal";
 
 const CACHE_KEY = "adcellerant_deals_cache";
 
@@ -75,6 +76,7 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
   const [xlError, setXlError] = useState<string | null>(null);
 
   const [selectedDeal, setSelectedDeal] = useState<ParsedDeal | null>(null);
+  const [researchDeal, setResearchDeal] = useState<ParsedDeal | null>(null);
 
   // Fetch deals on mount
   useEffect(() => {
@@ -189,7 +191,7 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
             booked={state.bookedByRepMonth}
             targets={state.targetsByRepMonth}
           />
-          <FocusedPipeline deals={state.deals} rep={rep} onDealClick={setSelectedDeal} />
+          <FocusedPipeline deals={state.deals} rep={rep} onDealClick={setSelectedDeal} onResearchClick={setResearchDeal} />
         </>
       )}
 
@@ -200,11 +202,17 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
           booked={state.bookedByRepMonth}
           targets={state.targetsByRepMonth}
           onDealClick={setSelectedDeal}
+          onResearchClick={setResearchDeal}
         />
       )}
 
       {/* Deal drawer */}
       <DealDrawer deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
+
+      {/* Research request modal */}
+      {researchDeal && (
+        <ResearchRequestModal deal={researchDeal} onClose={() => setResearchDeal(null)} />
+      )}
     </div>
   );
 }
