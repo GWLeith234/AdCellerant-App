@@ -1,4 +1,4 @@
-const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY!;
+const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY || "";
 const BASE_URL = "https://api.hubapi.com";
 
 const DEAL_PROPERTIES = [

@@ -3,7 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic();
+function getClient() {
+  return new Anthropic();
+}
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -34,7 +36,7 @@ export async function POST(request: Request) {
       .map((k) => `${k.toUpperCase()}: ${deal[k] || "not started"}`)
       .join(", ");
 
-    const message = await client.messages.create({
+    const message = await getClient().messages.create({
       model: "claude-sonnet-4-5-20250514",
       max_tokens: 2048,
       system: `You are a senior sales intelligence analyst. Produce a structured deal research brief based on all available deal context and notes. Be specific, actionable, and direct. Reference actual data from the deal context.`,

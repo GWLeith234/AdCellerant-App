@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY!;
+const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY || "";
 const BASE_URL = "https://api.hubapi.com";
 
 const CUSTOM_PROPERTIES = [

@@ -3,7 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic();
+function getClient() {
+  return new Anthropic();
+}
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "text and deal required" }, { status: 400 });
     }
 
-    const message = await client.messages.create({
+    const message = await getClient().messages.create({
       model: "claude-sonnet-4-5-20250514",
       max_tokens: 1024,
       messages: [
