@@ -4,7 +4,7 @@ import WorldClock from "./WorldClock";
 
 export default function Topbar() {
   return (
-    <header className="sticky top-0 z-50 bg-card border-b border-border px-5 py-3">
+    <header className="sticky top-0 z-30 bg-card border-b border-border px-3 sm:px-5 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-2xl">🌐</span>
@@ -16,7 +16,7 @@ export default function Topbar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="hidden sm:flex items-center gap-6">
           <WorldClock label="London" timezone="Europe/London" />
           <WorldClock label="Saskatoon" timezone="America/Regina" />
           <WorldClock label="Denver" timezone="America/Denver" />

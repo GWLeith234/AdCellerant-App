@@ -1,12 +1,12 @@
 "use client";
 
-import { useReducer, useEffect, useCallback, useState } from "react";
+import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import type { AppState, AppAction } from "@/lib/types";
 import type { ParsedDeal } from "@/lib/hubspot";
 import { parseBookedCSV, parseExcelWorkbook } from "@/lib/parsers";
 import { getRepConfig } from "@/lib/reps";
 import FileUpload from "./FileUpload";
-import LoadingSpinner from "./LoadingSpinner";
+import DealGridSkeleton from "./DealGridSkeleton";
 import TeamGrid from "./TeamGrid";
 import ScorecardStrip from "./ScorecardStrip";
 import FocusedPipeline from "./FocusedPipeline";
@@ -19,15 +19,15 @@ function loadCachedDeals(): ParsedDeal[] {
   if (typeof window === "undefined") return [];
   try {
     const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) return JSON.parse(cached);
-  } catch {}
+    if (cached) return JSON.parse(cached) as ParsedDeal[];
+  } catch { /* ignore */ }
   return [];
 }
 
 function cacheDeals(deals: ParsedDeal[]) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(deals));
-  } catch {}
+  } catch { /* ignore */ }
 }
 
 const initialState: AppState = {
@@ -77,33 +77,45 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
 
   const [selectedDeal, setSelectedDeal] = useState<ParsedDeal | null>(null);
   const [researchDeal, setResearchDeal] = useState<ParsedDeal | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch deals on mount
-  useEffect(() => {
-    async function loadDeals() {
+  // Track last refresh timestamp
+  const lastRefreshRef = useRef<string>("");
+
+  // Fetch deals
+  const loadDeals = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
       dispatch({ type: "SET_DEALS_LOADING", loading: true });
-      try {
-        const res = await fetch("/api/hubspot/deals");
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        dispatch({ type: "SET_DEALS", deals: data.deals });
-        cacheDeals(data.deals);
-      } catch (err) {
-        const cached = loadCachedDeals();
-        if (cached.length > 0) {
-          dispatch({ type: "SET_DEALS", deals: cached });
-          dispatch({ type: "SET_HUBSPOT_UNAVAILABLE", unavailable: true });
-        } else {
-          dispatch({
-            type: "SET_DEALS_ERROR",
-            error: err instanceof Error ? err.message : "Failed to load deals",
-          });
-        }
-      }
     }
-    loadDeals();
+    try {
+      const res = await fetch("/api/hubspot/deals");
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      dispatch({ type: "SET_DEALS", deals: data.deals });
+      cacheDeals(data.deals);
+      lastRefreshRef.current = new Date().toLocaleTimeString();
+    } catch (err) {
+      const cached = loadCachedDeals();
+      if (cached.length > 0) {
+        dispatch({ type: "SET_DEALS", deals: cached });
+        dispatch({ type: "SET_HUBSPOT_UNAVAILABLE", unavailable: true });
+      } else {
+        dispatch({
+          type: "SET_DEALS_ERROR",
+          error: err instanceof Error ? err.message : "Failed to load deals",
+        });
+      }
+    } finally {
+      setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadDeals();
+  }, [loadDeals]);
 
   const handleCSV = useCallback(async (file: File) => {
     setCsvLoading(true);
@@ -118,7 +130,7 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     } finally {
       setCsvLoading(false);
     }
-  }, [setCsvLoading, setCsvError, setCsvSuccess]);
+  }, []);
 
   const handleExcel = useCallback(async (file: File) => {
     setXlLoading(true);
@@ -126,7 +138,6 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     setXlSuccess(false);
     try {
       const { booked, targets } = await parseExcelWorkbook(file);
-      // Merge Excel booked data with any existing booked data
       dispatch({ type: "SET_BOOKED", booked: { ...state.bookedByRepMonth, ...booked } });
       dispatch({ type: "SET_TARGETS", targets });
       setXlSuccess(true);
@@ -135,29 +146,51 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     } finally {
       setXlLoading(false);
     }
-  }, [setXlLoading, setXlError, setXlSuccess, state.bookedByRepMonth]);
+  }, [state.bookedByRepMonth]);
 
   const repConfig = rep ? getRepConfig(rep) : null;
   const isFocused = !!rep && !!repConfig;
 
   return (
     <div>
-      {/* HubSpot warning */}
-      {state.hubspotUnavailable && (
-        <div className="mb-4 bg-amber/10 border border-amber/30 rounded-xl p-4">
-          <p className="text-amber text-sm font-medium">
-            HubSpot unavailable &mdash; showing last session
-          </p>
+      {/* Refresh bar */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          {state.hubspotUnavailable && (
+            <span className="text-amber text-xs bg-amber/10 border border-amber/30 px-2.5 py-1 rounded-lg">
+              HubSpot unavailable — showing cached data
+            </span>
+          )}
+          {state.dealsError && !state.hubspotUnavailable && (
+            <span className="text-orange text-xs bg-orange/10 border border-orange/30 px-2.5 py-1 rounded-lg">
+              {state.dealsError}
+            </span>
+          )}
         </div>
-      )}
+        <button
+          onClick={() => loadDeals(true)}
+          disabled={refreshing || state.dealsLoading}
+          className="flex items-center gap-1.5 text-xs text-muted hover:text-white bg-navy/50 hover:bg-card border border-border px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+          title="Refresh HubSpot deals"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            className={refreshing ? "animate-spin" : ""}
+          >
+            <path d="M1 7a6 6 0 0111.2-3M13 7a6 6 0 01-11.2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M12.2 1v3h-3M1.8 13v-3h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
 
-      {/* Deals loading / error */}
-      {state.dealsLoading && <LoadingSpinner message="Loading HubSpot deals..." />}
-
-      {state.dealsError && !state.hubspotUnavailable && (
-        <div className="mb-4 bg-orange/10 border border-orange/30 rounded-xl p-4">
-          <p className="text-orange text-sm font-medium">Failed to load deals</p>
-          <p className="text-muted text-xs mt-1">{state.dealsError}</p>
+      {/* Deals loading skeleton */}
+      {state.dealsLoading && (
+        <div className="mb-6">
+          <DealGridSkeleton count={8} columns={isFocused ? 3 : 4} />
         </div>
       )}
 
@@ -216,4 +249,3 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     </div>
   );
 }
-

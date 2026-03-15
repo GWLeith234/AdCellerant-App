@@ -230,7 +230,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed top-0 right-0 h-full w-[480px] max-w-full bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
+      <div className="fixed top-0 right-0 h-full w-full sm:w-[480px] bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
         {/* Close button */}
         <button
           onClick={onClose}
