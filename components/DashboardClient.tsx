@@ -96,6 +96,9 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
         throw new Error(data.error || `API error: ${res.status}`);
       }
       dispatch({ type: "SET_DEALS", deals: data.deals });
+      if (data.mock) {
+        dispatch({ type: "SET_HUBSPOT_UNAVAILABLE", unavailable: true });
+      }
       cacheDeals(data.deals);
       lastRefreshRef.current = new Date().toLocaleTimeString();
     } catch (err) {
@@ -159,7 +162,7 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
         <div className="flex items-center gap-2">
           {state.hubspotUnavailable && (
             <span className="text-amber text-xs bg-amber/10 border border-amber/30 px-2.5 py-1 rounded-lg">
-              HubSpot unavailable — showing cached data
+              Using mock data — set HUBSPOT_ACCESS_TOKEN for live deals
             </span>
           )}
           {state.dealsError && !state.hubspotUnavailable && (
