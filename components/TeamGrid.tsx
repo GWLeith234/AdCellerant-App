@@ -16,7 +16,7 @@ interface TeamGridProps {
   onResearchClick?: (deal: ParsedDeal) => void;
 }
 
-type TabKey = "all" | "neg" | "prop" | "leads";
+type TabKey = "all" | "neg" | "prop" | "ent" | "leads";
 
 export default function TeamGrid({ deals, booked, targets, onDealClick, onResearchClick }: TeamGridProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
@@ -26,10 +26,11 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
 
   // Counts per category
   const counts = useMemo(() => {
-    const c = { all: deals.length, neg: 0, prop: 0, leads: 0 };
+    const c = { all: deals.length, neg: 0, prop: 0, ent: 0, leads: 0 };
     for (const d of deals) {
       if (d.cat === "neg") c.neg++;
       else if (d.cat === "prop") c.prop++;
+      else if (d.cat === "ent") c.ent++;
       else if (d.cat === "leads") c.leads++;
     }
     return c;
@@ -39,6 +40,7 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
     { key: "all", label: "All Deals", count: counts.all },
     { key: "neg", label: "Negotiation", count: counts.neg },
     { key: "prop", label: "Proposal", count: counts.prop },
+    { key: "ent", label: "High Value", count: counts.ent },
     { key: "leads", label: "Leads", count: counts.leads },
   ];
 

@@ -12,7 +12,7 @@ interface FocusedPipelineProps {
   onResearchClick?: (deal: ParsedDeal) => void;
 }
 
-type FocusedTab = "urgent" | "neg" | "prop" | "leads" | "highval" | "cw";
+type FocusedTab = "urgent" | "neg" | "prop" | "ent" | "leads" | "highval" | "cw";
 
 function daysUntilClose(closeDate: string): number {
   if (!closeDate) return Infinity;
@@ -24,11 +24,12 @@ export default function FocusedPipeline({ deals, rep, onDealClick, onResearchCli
   const repDeals = useMemo(() => deals.filter((d) => d.rep === rep), [deals, rep]);
 
   const counts = useMemo(() => {
-    const c = { urgent: 0, neg: 0, prop: 0, leads: 0, highval: 0, cw: 0 };
+    const c = { urgent: 0, neg: 0, prop: 0, ent: 0, leads: 0, highval: 0, cw: 0 };
     for (const d of repDeals) {
       if (daysUntilClose(d.closeDate) <= 2 && d.cat !== "cw") c.urgent++;
       if (d.cat === "neg") c.neg++;
       else if (d.cat === "prop") c.prop++;
+      else if (d.cat === "ent") c.ent++;
       else if (d.cat === "leads") c.leads++;
       else if (d.cat === "cw") c.cw++;
       if (d.val >= 250_000) c.highval++;
@@ -49,8 +50,9 @@ export default function FocusedPipeline({ deals, rep, onDealClick, onResearchCli
     { key: "urgent", label: "Urgent", count: counts.urgent },
     { key: "neg", label: "Negotiation", count: counts.neg },
     { key: "prop", label: "Proposal", count: counts.prop },
+    { key: "ent", label: "High Value", count: counts.ent },
     { key: "leads", label: "Leads", count: counts.leads },
-    { key: "highval", label: "High Value", count: counts.highval },
+    { key: "highval", label: "Whale (≥$250K)", count: counts.highval },
     { key: "cw", label: "Closed Won", count: counts.cw },
   ];
 
@@ -62,6 +64,8 @@ export default function FocusedPipeline({ deals, rep, onDealClick, onResearchCli
         return repDeals.filter((d) => d.cat === "neg");
       case "prop":
         return repDeals.filter((d) => d.cat === "prop");
+      case "ent":
+        return repDeals.filter((d) => d.cat === "ent");
       case "leads":
         return repDeals.filter((d) => d.cat === "leads");
       case "highval":
