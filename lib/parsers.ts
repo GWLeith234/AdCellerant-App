@@ -160,15 +160,13 @@ function parseWoWTrackerSheet(workbook: XLSX.WorkBook): BookedByRepMonth {
  * Parse "Targets" sheet for monthly targets per rep.
  *
  * Layout: Raw cell grid with labeled sections.
- * We look for specific row labels in column A:
- *   - "George Leith — CA+V Total" (in the TARGET PLAN section, second occurrence)
- *   - "Andy McNab — UK (100%, Q1, 60% Q2-Q4)"
- *   - "Alex Kirkley — UK (40% from Apr, ramp Apr-Jun)"
+ * We look for specific row labels in column A within the TARGET PLAN section
+ * (NOT Board Plan, NOT Growth Plan — the middle section):
+ *   - "George Leith — CA+V Total"
+ *   - "Andy McNab — UK..."
+ *   - "Alex Kirkley — UK..."
  *
  * Columns B-M (indices 1-12) = Jan-Dec target amounts.
- *
- * The sheet has two sections: "Board Plan" (first) and "Target Plan" (second).
- * We want the TARGET PLAN section values.
  */
 function parseTargetsSheet(workbook: XLSX.WorkBook): TargetsByRepMonth {
   const targets: TargetsByRepMonth = {};
@@ -177,59 +175,56 @@ function parseTargetsSheet(workbook: XLSX.WorkBook): TargetsByRepMonth {
 
   const range = XLSX.utils.decode_range(sheet["!ref"] || "A1");
 
-  // Scan all rows to find target rows
-  // Track if we've entered TARGET PLAN section
-  let inTargetPlan = false;
-  const georgeOccurrences: number[] = [];
+  // Find the TARGET PLAN section boundaries
+  let targetPlanStart = -1;
+  let targetPlanEnd = range.e.r;
 
-  // First pass: find section markers and George rows
-  for (let r = 0; r <= range.e.r; r++) {
-    const cell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
-    if (!cell) continue;
-    const label = String(cell.v || "").trim();
-    const labelLower = label.toLowerCase();
+  // Section headers to detect boundaries (case-insensitive)
+  const sectionHeaders = ["board plan", "target plan", "growth plan"];
 
-    if (labelLower.includes("target plan")) {
-      inTargetPlan = true;
-      continue;
-    }
-
-    if (labelLower.includes("george leith") && labelLower.includes("ca+v")) {
-      georgeOccurrences.push(r);
-    }
-  }
-
-  // Determine which George row to use:
-  // If there are two occurrences, use the second (Target Plan section)
-  // If only one, use it
-  const georgeRow = georgeOccurrences.length >= 2
-    ? georgeOccurrences[1]
-    : georgeOccurrences[0] ?? -1;
-
-  // Rep matching patterns and their target row indices
-  const repMatchers: { rep: string; match: (label: string) => boolean; row: number }[] = [];
-
-  // Second pass: find Andy and Alex rows (they only appear once in Target Plan)
   for (let r = 0; r <= range.e.r; r++) {
     const cell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
     if (!cell) continue;
     const label = String(cell.v || "").trim().toLowerCase();
 
-    if (label.includes("andy mcnab")) {
-      repMatchers.push({ rep: "andy", match: () => true, row: r });
-    }
-    if (label.includes("alex kirkley")) {
-      repMatchers.push({ rep: "alex", match: () => true, row: r });
+    if (label.includes("target plan")) {
+      targetPlanStart = r;
+    } else if (targetPlanStart >= 0) {
+      // Check if we've hit the next section (Growth Plan or another header)
+      for (const header of sectionHeaders) {
+        if (header !== "target plan" && label.includes(header)) {
+          targetPlanEnd = r;
+          break;
+        }
+      }
+      if (targetPlanEnd < range.e.r) break;
     }
   }
 
-  if (georgeRow >= 0) {
-    repMatchers.push({ rep: "george", match: () => true, row: georgeRow });
+  // If no TARGET PLAN header found, scan entire sheet as fallback
+  if (targetPlanStart < 0) {
+    targetPlanStart = 0;
+  }
+
+  // Find rep rows within the TARGET PLAN section only
+  const repRows: { rep: string; row: number }[] = [];
+
+  for (let r = targetPlanStart; r <= targetPlanEnd; r++) {
+    const cell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
+    if (!cell) continue;
+    const label = String(cell.v || "").trim().toLowerCase();
+
+    if (label.includes("george leith") && label.includes("ca+v")) {
+      repRows.push({ rep: "george", row: r });
+    } else if (label.includes("andy mcnab")) {
+      repRows.push({ rep: "andy", row: r });
+    } else if (label.includes("alex kirkley")) {
+      repRows.push({ rep: "alex", row: r });
+    }
   }
 
   // Read monthly targets from columns B-M (indices 1-12) for each rep row
-  for (const { rep, row } of repMatchers) {
-    if (row < 0) continue;
+  for (const { rep, row } of repRows) {
     targets[rep] = {};
 
     for (let c = 1; c <= 12; c++) {

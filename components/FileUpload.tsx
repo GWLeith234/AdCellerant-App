@@ -84,8 +84,11 @@ export default function FileUpload({
           <span className="text-muted text-sm">Processing {fileName}...</span>
         </div>
       ) : success && fileName ? (
-        <div>
-          <span className="text-green text-sm font-medium">{fileName} loaded</span>
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-green text-sm font-medium">
+            ✓ {accept === ".csv" ? "CSV" : "Excel"} loaded
+          </span>
+          <span className="text-muted text-[11px]">{fileName}</span>
         </div>
       ) : (
         <div>
