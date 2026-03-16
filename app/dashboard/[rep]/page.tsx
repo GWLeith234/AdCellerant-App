@@ -1,13 +1,14 @@
 import DashboardClient from "@/components/DashboardClient";
 
 interface Props {
-  params: { rep: string };
+  params: Promise<{ rep: string }>;
 }
 
 const VALID_REPS = ["george", "andy", "alex", "vendasta"];
 
-export default function RepFocusedPage({ params }: Props) {
-  const focusedRep = VALID_REPS.includes(params.rep) ? params.rep : "george";
+export default async function RepFocusedPage({ params }: Props) {
+  const { rep } = await params;
+  const focusedRep = VALID_REPS.includes(rep) ? rep : "george";
 
   return (
     <DashboardClient

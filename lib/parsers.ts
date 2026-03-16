@@ -5,16 +5,17 @@ import type { BookedByRepMonth, TargetsByRepMonth } from "./types";
 const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** Partners assigned to Andy McNab (UK revenue line) */
-const ANDY_PARTNERS = new Set([
+const ANDY_PARTNERS = [
   "ams",
   "beettoo",
-  "convergence digital - uk",
+  "convergence digital",
   "innocean",
-]);
+];
 
 function partnerToRep(partnerName: string): string {
-  const key = partnerName.trim().toLowerCase();
-  return ANDY_PARTNERS.has(key) ? "andy" : "george";
+  // Normalize: trim, lowercase, collapse whitespace
+  const key = partnerName.trim().toLowerCase().replace(/\s+/g, " ");
+  return ANDY_PARTNERS.some((p) => key === p || key.startsWith(p)) ? "andy" : "george";
 }
 
 /**

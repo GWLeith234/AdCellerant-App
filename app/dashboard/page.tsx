@@ -1,6 +1,11 @@
-import { redirect } from "next/navigation";
+import DashboardClient from "@/components/DashboardClient";
 
 export default function DashboardPage() {
-  // Default to George's rep view for now (auth disabled)
-  redirect("/dashboard/george");
+  return (
+    <DashboardClient
+      userEmail="george.leith@adcellerant.com"
+      userName="George Leith"
+      rep={null}
+    />
+  );
 }
