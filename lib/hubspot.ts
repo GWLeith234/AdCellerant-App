@@ -1,4 +1,4 @@
-const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY || "";
+const HUBSPOT_ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN || "";
 const BASE_URL = "https://api.hubapi.com";
 
 const DEAL_PROPERTIES = [
@@ -27,6 +27,7 @@ const STAGE_MAP: Record<string, { category: string; probability: number; label: 
 const OWNER_MAP: Record<string, string> = {
   "78947458": "george",
   "80955316": "andy",
+  "83471854": "alex",
 };
 
 // All owner IDs we want to fetch deals for
@@ -345,39 +346,47 @@ export function parseDealFromHubSpot(deal: {
 }
 
 export async function fetchAllDeals(): Promise<ParsedDeal[]> {
-  let allResults: { id: string; properties: Record<string, string> }[] = [];
-  let after: string | undefined;
+  const res = await fetch(`${BASE_URL}/crm/v3/objects/deals/search`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      filterGroups: [
+        {
+          filters: [
+            {
+              propertyName: "hubspot_owner_id",
+              operator: "IN",
+              values: TRACKED_OWNER_IDS,
+            },
+            {
+              propertyName: "pipeline",
+              operator: "EQ",
+              value: "default",
+            },
+            {
+              propertyName: "dealstage",
+              operator: "NOT_IN",
+              values: ["closedwon", "closedlost"],
+            },
+          ],
+        },
+      ],
+      properties: DEAL_PROPERTIES,
+      limit: 100,
+    }),
+    cache: "no-store",
+  });
 
-  do {
-    const params = new URLSearchParams({
-      limit: "100",
-      properties: DEAL_PROPERTIES.join(","),
-    });
-    if (after) params.set("after", after);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`HubSpot API error: ${res.status} — ${body}`);
+  }
 
-    const res = await fetch(`${BASE_URL}/crm/v3/objects/deals?${params}`, {
-      headers: {
-        Authorization: `Bearer ${HUBSPOT_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      throw new Error(`HubSpot API error: ${res.status}`);
-    }
-
-    const data = await res.json();
-    allResults = allResults.concat(data.results || []);
-    after = data.paging?.next?.after;
-  } while (after);
-
-  return allResults
-    .filter((deal) => {
-      const ownerId = deal.properties.hubspot_owner_id;
-      return TRACKED_OWNER_IDS.includes(ownerId);
-    })
-    .map(parseDealFromHubSpot);
+  const data = await res.json();
+  return (data.results || []).map(parseDealFromHubSpot);
 }
 
 export async function fetchDealById(id: string): Promise<ParsedDeal> {
@@ -385,7 +394,7 @@ export async function fetchDealById(id: string): Promise<ParsedDeal> {
     `${BASE_URL}/crm/v3/objects/deals/${id}?properties=${DEAL_PROPERTIES.join(",")}`,
     {
       headers: {
-        Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+        Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
       },
       cache: "no-store",
@@ -407,7 +416,7 @@ export async function updateDeal(
   const res = await fetch(`${BASE_URL}/crm/v3/objects/deals/${id}`, {
     method: "PATCH",
     headers: {
-      Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ properties }),
@@ -426,7 +435,7 @@ export async function addNoteToDeal(dealId: string, noteBody: string): Promise<v
   const res = await fetch(`${BASE_URL}/crm/v3/objects/notes`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -459,7 +468,7 @@ export async function appendResearchNote(dealId: string, note: string): Promise<
     `${BASE_URL}/crm/v3/objects/deals/${dealId}?properties=description`,
     {
       headers: {
-        Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+        Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
       },
       cache: "no-store",
@@ -516,7 +525,7 @@ export async function appendResearchNote(dealId: string, note: string): Promise<
   const updateRes = await fetch(`${BASE_URL}/crm/v3/objects/deals/${dealId}`, {
     method: "PATCH",
     headers: {
-      Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ properties: { description: newDesc } }),

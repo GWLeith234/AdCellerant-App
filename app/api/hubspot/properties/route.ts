@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY || "";
+const HUBSPOT_ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN || "";
 const BASE_URL = "https://api.hubapi.com";
 
 const CUSTOM_PROPERTIES = [
@@ -35,7 +35,7 @@ async function createProperty(property: (typeof CUSTOM_PROPERTIES)[number]) {
   const res = await fetch(`${BASE_URL}/crm/v3/properties/deals`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${HUBSPOT_API_KEY}`,
+      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(property),
