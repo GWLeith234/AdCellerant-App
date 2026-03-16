@@ -246,6 +246,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       <div className="fixed top-0 right-0 h-full w-full sm:w-[480px] bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
         {/* Close button */}
         <button
+          aria-label="Close"
           onClick={onClose}
           className="absolute top-4 right-4 z-10 w-8 h-8 rounded-lg bg-navy/50 hover:bg-navy flex items-center justify-center text-muted hover:text-white transition-colors"
         >
