@@ -5,25 +5,25 @@ import WorldClock from "./WorldClock";
 export default function Topbar() {
   return (
     <header
-      className="sticky top-0 z-[100] border-b border-border px-3 sm:px-5 flex items-center"
-      style={{ backgroundColor: "#0B1624", height: 56 }}
+      className="sticky top-0 z-50 border-b border-border flex items-center"
+      style={{ backgroundColor: "#0B1624", height: 56, padding: "0 20px" }}
     >
       <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-        {/* Left: logo + brand */}
-        <div className="flex items-center gap-3">
-          {/* AdCellerant combined logo (flame icon + wordmark) */}
+        {/* Left: logo + divider + globe + brand */}
+        <div className="flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logos/adcellerant-logo.png"
-            alt="AdCellerant"
-            style={{ height: 36, width: "auto", mixBlendMode: "screen" }}
+            alt=""
+            style={{ height: 38, width: "auto", mixBlendMode: "screen" }}
           />
 
-          {/* Divider */}
-          <div className="w-px h-7 bg-white/15 mx-1" />
+          {/* Vertical divider */}
+          <div style={{ width: 1, height: 28, background: "#2A3F5C", margin: "0 12px" }} />
 
           {/* Globe + brand text */}
           <span style={{ fontSize: 28, lineHeight: 1 }}>🌍</span>
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col justify-center" style={{ marginLeft: 8 }}>
             <span
               style={{
                 fontSize: 16,
