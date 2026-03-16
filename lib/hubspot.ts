@@ -1,5 +1,5 @@
 const HUBSPOT_ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN || "";
-const BASE_URL = "https://api.hubapi.com";
+const BASE_URL = "https://api.hubspot.com";
 
 const DEAL_PROPERTIES = [
   "dealname",
