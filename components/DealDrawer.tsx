@@ -35,6 +35,51 @@ interface LogOp {
   hubspotValue: string;
 }
 
+// Section icons as inline SVGs
+const IconAction = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path d="M7 1v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5"/>
+  </svg>
+);
+const IconLog = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path d="M2 3h10M2 7h10M2 11h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+const IconEmail = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M1 4l6 4 6-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+const IconMeddic = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+  </svg>
+);
+const IconContacts = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <circle cx="7" cy="4" r="3" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M1 13c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+const IconDocs = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path d="M3 1h5l4 4v8H3V1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+    <path d="M8 1v4h4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+  </svg>
+);
+const IconDetails = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M7 6v4M7 4.5v0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+
 export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   // --- Log to HubSpot state ---
   const [logText, setLogText] = useState("");
@@ -53,11 +98,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   // --- Research panel state ---
   const [showResearch, setShowResearch] = useState(false);
 
-  // --- Research note state ---
-  const [researchNote, setResearchNote] = useState("");
-  const [researchNoteStatus, setResearchNoteStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [researchNoteError, setResearchNoteError] = useState<string | null>(null);
-
   // Reset all states when deal changes
   useEffect(() => {
     setLogText("");
@@ -71,9 +111,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setEmailLoading(false);
     setEmailCopied(false);
     setShowResearch(false);
-    setResearchNote("");
-    setResearchNoteStatus("idle");
-    setResearchNoteError(null);
   }, [deal?.id]);
 
   // Close on Escape
@@ -97,7 +134,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     };
   }, [deal, onClose, showResearch]);
 
-  // --- 7A: Parse & Preview ---
+  // --- Parse & Preview ---
   const handleParsePreview = useCallback(async () => {
     if (!logText.trim() || !deal) return;
     setLogStatus("parsing");
@@ -120,13 +157,12 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     }
   }, [logText, deal]);
 
-  // --- 7A: Confirm & execute ---
+  // --- Confirm & execute ---
   const handleConfirmLog = useCallback(async () => {
     if (!deal || !logOps) return;
     setLogStatus("saving");
     setLogError(null);
     try {
-      // Execute property updates
       const propUpdates: Record<string, string> = {};
       const notes: string[] = [];
 
@@ -138,7 +174,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
         }
       }
 
-      // PATCH deal properties if any
       if (Object.keys(propUpdates).length > 0) {
         const patchRes = await fetch(`/api/hubspot/deal/${deal.id}/update`, {
           method: "PATCH",
@@ -148,7 +183,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
         if (!patchRes.ok) throw new Error("Failed to update deal properties");
       }
 
-      // POST notes if any
       for (const note of notes) {
         const noteRes = await fetch(`/api/hubspot/deal/${deal.id}/note`, {
           method: "POST",
@@ -168,7 +202,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     }
   }, [deal, logOps]);
 
-  // --- 7B: Generate email ---
+  // --- Generate email ---
   const handleGenerateEmail = useCallback(async () => {
     if (!deal) return;
     setEmailLoading(true);
@@ -199,27 +233,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setTimeout(() => setEmailCopied(false), 2000);
   }, [emailSubject, emailBody]);
 
-  const handleAddResearchNote = useCallback(async () => {
-    if (!deal || !researchNote.trim()) return;
-    setResearchNoteStatus("saving");
-    setResearchNoteError(null);
-    try {
-      const res = await fetch(`/api/hubspot/deal/${deal.id}/research-note`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: researchNote.trim() }),
-      });
-      if (!res.ok) throw new Error("Failed to save research note");
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setResearchNoteStatus("saved");
-      setResearchNote("");
-    } catch (err) {
-      setResearchNoteError(err instanceof Error ? err.message : "Save failed");
-      setResearchNoteStatus("error");
-    }
-  }, [deal, researchNote]);
-
   if (!deal) return null;
 
   const hubspotUrl = `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-3/${deal.hsId}`;
@@ -247,7 +260,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
           <div className="px-6 pb-6">
             {/* Section 1: Next Action */}
-            <DrawerSection title="Next Action">
+            <DrawerSection title="Next Action" icon={IconAction}>
               <div className="flex gap-2">
                 <button className="flex-1 bg-blue hover:bg-blue/80 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-colors">
                   {deal.action1}
@@ -256,7 +269,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                   {deal.action2}
                 </button>
               </div>
-              {/* AI Research button in action area */}
               {deal.hasResearch && (
                 <button
                   onClick={() => setShowResearch(true)}
@@ -267,8 +279,8 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               )}
             </DrawerSection>
 
-            {/* Section 2: Log to HubSpot (7A) */}
-            <DrawerSection title="Log to HubSpot">
+            {/* Section 2: Log to HubSpot */}
+            <DrawerSection title="Log to HubSpot" icon={IconLog}>
               <textarea
                 value={logText}
                 onChange={(e) => setLogText(e.target.value)}
@@ -288,8 +300,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       Parsing...
                     </>
                   ) : (
-                    <><span>&#10022;</span> Parse &amp; Preview Changes</>
-
+                    <>&#10022; Parse &amp; Preview</>
                   )}
                 </button>
               </div>
@@ -330,7 +341,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       disabled={logStatus === "saving"}
                       className="bg-green/20 text-green text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-green/30 transition-colors disabled:opacity-50"
                     >
-                            {logStatus === "saving" ? "Saving..." : "Confirm & Write to HubSpot"}
+                      {logStatus === "saving" ? "Saving..." : "Confirm & Write"}
                     </button>
                     <button
                       onClick={() => { setLogOps(null); setLogSummary(""); setLogStatus("idle"); }}
@@ -350,8 +361,8 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               )}
             </DrawerSection>
 
-            {/* Section 3: Draft Client Email (7B) */}
-            <DrawerSection title="Draft Client Email">
+            {/* Section 3: Draft Client Email */}
+            <DrawerSection title="Draft Client Email" icon={IconEmail}>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {TONE_OPTIONS.map((tone) => (
                   <button
@@ -378,9 +389,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                     Generating...
                   </>
                 ) : (
-                  <>
-                    <span>&#10022;</span> Generate Email
-                  </>
+                  <>&#10022; Generate Email</>
                 )}
               </button>
 
@@ -413,51 +422,18 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               )}
             </DrawerSection>
 
-            {/* Section 4: Add Research Note */}
-            <DrawerSection title="Add Research Note">
-              <textarea
-                value={researchNote}
-                onChange={(e) => setResearchNote(e.target.value)}
-                placeholder="Add research notes, meeting outcomes, or intel to the deal record..."
-                className="w-full bg-navy/50 border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted resize-none focus:outline-none focus:border-blue"
-                rows={3}
-              />
-              <div className="flex items-center gap-2 mt-2">
-                <button
-                  onClick={handleAddResearchNote}
-                  disabled={!researchNote.trim() || researchNoteStatus === "saving"}
-                  className="bg-[#7C3AED]/20 text-[#7C3AED] text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-[#7C3AED]/30 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {researchNoteStatus === "saving" ? (
-                    <>
-                      <span className="w-3 h-3 border-2 border-[#7C3AED] border-t-transparent rounded-full animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Append to Deal"
-                  )}
-                </button>
-                {researchNoteStatus === "saved" && (
-                  <span className="text-green text-xs">Note saved to HubSpot</span>
-                )}
-                {researchNoteError && (
-                  <span className="text-orange text-xs">{researchNoteError}</span>
-                )}
-              </div>
-            </DrawerSection>
-
-            {/* Section 5: MEDDIC */}
-            <DrawerSection title="MEDDIC">
+            {/* Section 4: MEDDIC */}
+            <DrawerSection title="MEDDIC" icon={IconMeddic}>
               <MeddicGrid meddic={deal.meddic} />
             </DrawerSection>
 
             {/* Section 5: Contacts */}
-            <DrawerSection title="Contacts">
+            <DrawerSection title="Contacts" icon={IconContacts}>
               <ContactsList contacts={deal.contacts} />
             </DrawerSection>
 
             {/* Section 6: Document Status */}
-            <DrawerSection title="Document Status">
+            <DrawerSection title="Document Status" icon={IconDocs}>
               <DocStatusGrid
                 nda={deal.nda}
                 msa={deal.msa}
@@ -469,7 +445,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
             </DrawerSection>
 
             {/* Section 7: Deal Details */}
-            <DrawerSection title="Deal Details">
+            <DrawerSection title="Deal Details" icon={IconDetails}>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-navy/50 rounded-lg px-3 py-2.5">
                   <p className="text-muted text-[10px] uppercase tracking-wider">Stage</p>
@@ -492,7 +468,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               </div>
             </DrawerSection>
 
-            {/* Open in HubSpot */}
+            {/* Footer: Open in HubSpot */}
             <div className="pt-4 border-t border-border">
               <a
                 href={hubspotUrl}
@@ -500,14 +476,14 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                 rel="noopener noreferrer"
                 className="block w-full text-center bg-navy/50 border border-border text-blue text-sm font-medium py-2.5 rounded-lg hover:bg-navy hover:border-blue/30 transition-colors"
               >
-                Open in HubSpot &#x1F517;
+                &#x1F517; Open in HubSpot
               </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 7C: Research Panel (full-screen over drawer) */}
+      {/* Research Panel overlay */}
       {showResearch && (
         <ResearchPanel deal={deal} onClose={() => setShowResearch(false)} />
       )}

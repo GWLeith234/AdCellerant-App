@@ -6,20 +6,19 @@ interface DrawerHeroProps {
   deal: ParsedDeal;
 }
 
-function stagePillColor(cat: string): string {
+function stagePillStyle(cat: string): { background: string; color: string } {
   switch (cat) {
-    case "neg": return "bg-orange/20 text-orange";
-    case "prop": return "bg-blue/20 text-blue";
-    case "leads": return "bg-muted/20 text-muted";
-    case "cw": return "bg-green/20 text-green";
-    default: return "bg-muted/20 text-muted";
+    case "neg": return { background: "rgba(255,74,45,0.2)", color: "#FF4A2D" };
+    case "prop": return { background: "rgba(79,163,209,0.2)", color: "#4FA3D1" };
+    case "cw": return { background: "rgba(46,204,138,0.2)", color: "#2ECC8A" };
+    default: return { background: "rgba(160,174,192,0.2)", color: "#A0AEC0" };
   }
 }
 
-function stageAgeBadge(days: number): { cls: string } {
-  if (days <= 6) return { cls: "bg-green/20 text-green" };
-  if (days <= 13) return { cls: "bg-amber/20 text-amber" };
-  return { cls: "bg-orange/20 text-orange" };
+function stageAgeColor(days: number): string {
+  if (days <= 6) return "#2ECC8A";
+  if (days <= 13) return "#F5A623";
+  return "#FF4A2D";
 }
 
 function daysSinceLabel(days: number): string {
@@ -29,30 +28,48 @@ function daysSinceLabel(days: number): string {
 }
 
 export default function DrawerHero({ deal }: DrawerHeroProps) {
-  const age = stageAgeBadge(deal.stageAge);
+  const pillStyle = stagePillStyle(deal.cat);
+  const ageColor = stageAgeColor(deal.stageAge);
 
   return (
-    <div className="bg-slate px-6 py-5">
-      {/* Stage pill + stage age badge */}
+    <div className="px-6 py-5" style={{ backgroundColor: "#194766" }}>
+      {/* Row 1: Stage pill + stage age badge */}
       <div className="flex items-center gap-2 mb-2">
-        <span className={`text-xs px-2 py-0.5 rounded font-medium ${stagePillColor(deal.cat)}`}>
+        <span
+          className="text-xs px-2 py-0.5 rounded font-medium"
+          style={{ background: pillStyle.background, color: pillStyle.color }}
+        >
           {deal.stage}
         </span>
         {deal.stageAge > 0 && (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${age.cls}`}>
+          <span
+            className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+            style={{
+              background: `${ageColor}33`,
+              color: ageColor,
+            }}
+          >
             {deal.stageAge}d in stage
           </span>
         )}
       </div>
 
-      {/* Deal name */}
-      <h2 className="text-white text-lg font-bold leading-tight">{deal.name}</h2>
+      {/* Row 2: Deal name */}
+      <h2 className="text-white font-bold leading-tight" style={{ fontSize: "18px" }}>
+        {deal.name}
+      </h2>
+
+      {/* Row 3: Sub-line */}
       {deal.sub && (
-        <p className="text-muted text-sm mt-0.5">{deal.sub}</p>
+        <p className="text-muted mt-0.5" style={{ fontSize: "11px" }}>
+          {deal.sub}
+        </p>
       )}
 
-      {/* Value */}
-      <p className="text-orange text-xl font-bold mt-2">{deal.valShort}</p>
+      {/* Row 4: Deal value */}
+      <p className="font-bold mt-2" style={{ fontSize: "26px", color: "#FF4A2D" }}>
+        {deal.valShort}
+      </p>
 
       {/* Meta strip */}
       <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -67,7 +84,7 @@ export default function DrawerHero({ deal }: DrawerHeroProps) {
           </span>
         )}
         {deal.persona && (
-          <span className="text-blue text-xs">{deal.persona}</span>
+          <span className="text-xs" style={{ color: "#4FA3D1" }}>{deal.persona}</span>
         )}
         {deal.stageAge > 0 && (
           <span className="text-muted text-xs">
