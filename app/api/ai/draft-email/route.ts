@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import Anthropic from "@anthropic-ai/sdk";
 
 function getClient() {
@@ -16,11 +14,6 @@ const TONE_DESCRIPTIONS: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const body = await request.json();
     const { deal, tone } = body;

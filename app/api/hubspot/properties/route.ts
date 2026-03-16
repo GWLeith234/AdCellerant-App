@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
 const HUBSPOT_API_KEY = process.env.HUBSPOT_API_KEY || "";
 const BASE_URL = "https://api.hubapi.com";
@@ -56,11 +54,6 @@ async function createProperty(property: (typeof CUSTOM_PROPERTIES)[number]) {
 }
 
 export async function POST() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const results = await Promise.all(CUSTOM_PROPERTIES.map(createProperty));
     return NextResponse.json({ results });
