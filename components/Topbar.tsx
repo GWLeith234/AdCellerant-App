@@ -13,9 +13,9 @@ export default function Topbar() {
         <div className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logos/adcellerant-logo.png"
+            src="/logos/AdC_Logo_RGB_Inverse_copy.png"
             alt=""
-            style={{ height: 38, width: "auto", mixBlendMode: "screen" }}
+            style={{ height: '38px', width: 'auto', mixBlendMode: 'screen', display: 'block' }}
           />
 
           {/* Vertical divider */}
