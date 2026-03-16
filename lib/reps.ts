@@ -14,7 +14,7 @@ export const REP_CONFIGS: RepConfig[] = [
   {
     key: "george",
     name: "George Leith",
-    role: "VP Sales, North America",
+    role: "President, International",
     photo: "/reps/george.jpg",
     borderColor: "#FF0000",
     gradientFrom: "#FF0000",
@@ -24,7 +24,7 @@ export const REP_CONFIGS: RepConfig[] = [
   {
     key: "andy",
     name: "Andy McNab",
-    role: "Sales Director, UK",
+    role: "Managing Director UK",
     photo: "/reps/andy.jpg",
     borderColor: "#012169",
     gradientFrom: "#012169",
@@ -34,7 +34,7 @@ export const REP_CONFIGS: RepConfig[] = [
   {
     key: "alex",
     name: "Alex Kirkley",
-    role: "Account Executive, UK",
+    role: "Director Agency Partnerships",
     photo: "/reps/alex.jpg",
     borderColor: "#012169",
     gradientFrom: "#012169",

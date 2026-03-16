@@ -61,21 +61,21 @@ export default function ScorecardStrip({ config, booked, targets }: ScorecardStr
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
             <div
-              className="w-[52px] h-[52px] rounded-full border-[3px] overflow-hidden bg-navy flex items-center justify-center"
+              className="w-[52px] h-[52px] rounded-full border-[3px] overflow-hidden bg-navy flex items-center justify-center relative"
               style={{ borderColor: config.borderColor }}
             >
               {config.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={config.photo}
-                  alt={config.name}
-                  className="w-full h-full object-cover"
+                  alt=""
+                  className="w-full h-full object-cover relative z-10"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
-              ) : (
-                <span className="text-lg font-bold text-muted">
-                  {config.name.split(" ").map((w) => w[0]).join("")}
-                </span>
-              )}
+              ) : null}
+              <span className="text-lg font-bold text-muted absolute inset-0 flex items-center justify-center z-0">
+                {config.name.split(" ").map((w) => w[0]).join("")}
+              </span>
             </div>
             {config.flag && <FlagBadge country={config.flag} size={18} />}
           </div>

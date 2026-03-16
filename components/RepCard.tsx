@@ -70,24 +70,24 @@ export default function RepCard({
       <div className="px-4 pt-4 pb-3 flex items-center gap-3">
         <div className="relative flex-shrink-0">
           <div
-            className="w-[62px] h-[62px] rounded-full border-[3px] overflow-hidden bg-navy flex items-center justify-center"
+            className="w-[62px] h-[62px] rounded-full border-[3px] overflow-hidden bg-navy flex items-center justify-center relative"
             style={{ borderColor: config.borderColor }}
           >
             {config.photo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={config.photo}
-                alt={config.name}
-                className="w-full h-full object-cover"
+                alt=""
+                className="w-full h-full object-cover relative z-10"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
-            ) : (
-              <span className="text-xl font-bold text-muted">
-                {config.name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")}
-              </span>
-            )}
+            ) : null}
+            <span className="text-xl font-bold text-muted absolute inset-0 flex items-center justify-center z-0">
+              {config.name
+                .split(" ")
+                .map((w) => w[0])
+                .join("")}
+            </span>
           </div>
           {config.flag && <FlagBadge country={config.flag} />}
         </div>
