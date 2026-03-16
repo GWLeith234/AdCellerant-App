@@ -1,11 +1,10 @@
 "use client";
 
 import { useReducer, useEffect, useCallback, useState, useRef } from "react";
-import type { AppState, AppAction } from "@/lib/types";
+import type { AppState, AppAction, BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
 import type { ParsedDeal } from "@/lib/hubspot";
-import { parseBookedCSV, parseExcelWorkbook } from "@/lib/parsers";
 import { getRepConfig } from "@/lib/reps";
-import FileUpload from "./FileUpload";
+import DataUploadPanel from "./DataUploadPanel";
 import DealGridSkeleton from "./DealGridSkeleton";
 import TeamGrid from "./TeamGrid";
 import ScorecardStrip from "./ScorecardStrip";
@@ -14,6 +13,8 @@ import DealDrawer from "./DealDrawer";
 import ResearchRequestModal from "./ResearchRequestModal";
 
 const CACHE_KEY = "adcellerant_deals_cache";
+const BOOKED_CACHE_KEY = "adcellerant_booked_cache";
+const TARGETS_CACHE_KEY = "adcellerant_targets_cache";
 
 function loadCachedDeals(): ParsedDeal[] {
   if (typeof window === "undefined") return [];
@@ -27,6 +28,36 @@ function loadCachedDeals(): ParsedDeal[] {
 function cacheDeals(deals: ParsedDeal[]) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(deals));
+  } catch { /* ignore */ }
+}
+
+function loadCachedBooked(): BookedByRepMonth {
+  if (typeof window === "undefined") return {};
+  try {
+    const cached = localStorage.getItem(BOOKED_CACHE_KEY);
+    if (cached) return JSON.parse(cached) as BookedByRepMonth;
+  } catch { /* ignore */ }
+  return {};
+}
+
+function loadCachedTargets(): TargetsByRepMonth {
+  if (typeof window === "undefined") return {};
+  try {
+    const cached = localStorage.getItem(TARGETS_CACHE_KEY);
+    if (cached) return JSON.parse(cached) as TargetsByRepMonth;
+  } catch { /* ignore */ }
+  return {};
+}
+
+function cacheBooked(booked: BookedByRepMonth) {
+  try {
+    localStorage.setItem(BOOKED_CACHE_KEY, JSON.stringify(booked));
+  } catch { /* ignore */ }
+}
+
+function cacheTargets(targets: TargetsByRepMonth) {
+  try {
+    localStorage.setItem(TARGETS_CACHE_KEY, JSON.stringify(targets));
   } catch { /* ignore */ }
 }
 
@@ -67,20 +98,27 @@ interface DashboardClientProps {
 export default function DashboardClient({ userEmail, userName, rep }: DashboardClientProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const [csvLoading, setCsvLoading] = useState(false);
-  const [csvSuccess, setCsvSuccess] = useState(false);
-  const [csvError, setCsvError] = useState<string | null>(null);
-
-  const [xlLoading, setXlLoading] = useState(false);
-  const [xlSuccess, setXlSuccess] = useState(false);
-  const [xlError, setXlError] = useState<string | null>(null);
-
   const [selectedDeal, setSelectedDeal] = useState<ParsedDeal | null>(null);
   const [researchDeal, setResearchDeal] = useState<ParsedDeal | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // Track last refresh timestamp
   const lastRefreshRef = useRef<string>("");
+
+  // Restore persisted booked/targets on mount
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    const booked = loadCachedBooked();
+    const targets = loadCachedTargets();
+    if (Object.keys(booked).length > 0) {
+      dispatch({ type: "SET_BOOKED", booked });
+    }
+    if (Object.keys(targets).length > 0) {
+      dispatch({ type: "SET_TARGETS", targets });
+    }
+  }, []);
 
   // Fetch deals
   const loadDeals = useCallback(async (isRefresh = false) => {
@@ -121,36 +159,25 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     loadDeals();
   }, [loadDeals]);
 
-  const handleCSV = useCallback(async (file: File) => {
-    setCsvLoading(true);
-    setCsvError(null);
-    setCsvSuccess(false);
-    try {
-      const booked = await parseBookedCSV(file);
-      dispatch({ type: "SET_BOOKED", booked });
-      setCsvSuccess(true);
-    } catch (err) {
-      setCsvError(err instanceof Error ? err.message : "CSV parse error");
-    } finally {
-      setCsvLoading(false);
-    }
-  }, []);
+  // Handle data loaded from upload panel
+  const handleDataLoaded = useCallback(
+    (data: { booked?: BookedByRepMonth; targets?: TargetsByRepMonth }) => {
+      if (data.booked) {
+        const merged = { ...state.bookedByRepMonth, ...data.booked };
+        dispatch({ type: "SET_BOOKED", booked: merged });
+        cacheBooked(merged);
+      }
+      if (data.targets) {
+        dispatch({ type: "SET_TARGETS", targets: data.targets });
+        cacheTargets(data.targets);
+      }
+    },
+    [state.bookedByRepMonth]
+  );
 
-  const handleExcel = useCallback(async (file: File) => {
-    setXlLoading(true);
-    setXlError(null);
-    setXlSuccess(false);
-    try {
-      const { booked, targets } = await parseExcelWorkbook(file);
-      dispatch({ type: "SET_BOOKED", booked: { ...state.bookedByRepMonth, ...booked } });
-      dispatch({ type: "SET_TARGETS", targets });
-      setXlSuccess(true);
-    } catch (err) {
-      setXlError(err instanceof Error ? err.message : "Excel parse error");
-    } finally {
-      setXlLoading(false);
-    }
-  }, [state.bookedByRepMonth]);
+  const hasRevenueData =
+    Object.keys(state.bookedByRepMonth).length > 0 ||
+    Object.keys(state.targetsByRepMonth).length > 0;
 
   const repConfig = rep ? getRepConfig(rep) : null;
   const isFocused = !!rep && !!repConfig;
@@ -198,27 +225,11 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
         </div>
       )}
 
-      {/* File uploads */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FileUpload
-          label="Upload Booked Revenue CSV"
-          accept=".csv"
-          hint="Drag & drop or click — columns: rep, month, amount"
-          onFile={handleCSV}
-          loading={csvLoading}
-          success={csvSuccess}
-          error={csvError}
-        />
-        <FileUpload
-          label="Upload WoW Analysis Excel"
-          accept=".xlsx,.xls"
-          hint="Drag & drop or click — sheets: WoW Tracker, Targets"
-          onFile={handleExcel}
-          loading={xlLoading}
-          success={xlSuccess}
-          error={xlError}
-        />
-      </div>
+      {/* Data upload panel */}
+      <DataUploadPanel
+        onDataLoaded={handleDataLoaded}
+        hasExistingData={hasRevenueData}
+      />
 
       {/* Focused rep view */}
       {!state.dealsLoading && isFocused && repConfig && (
