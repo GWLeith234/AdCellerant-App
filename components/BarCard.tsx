@@ -22,11 +22,12 @@ function ragText(pct: number): string {
 function formatShort(val: number): string {
   if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
   if (val >= 1_000) return `$${(val / 1_000).toFixed(1)}K`;
-  if (val === 0) return "$0";
+  if (val === 0) return "—";
   return `$${val.toFixed(0)}`;
 }
 
 export default function BarCard({ label, booked, target, isRamp }: BarCardProps) {
+  const hasData = booked > 0 || target > 0;
   const pct = target > 0 ? Math.min((booked / target) * 100, 100) : 0;
   const gap = target > 0 ? Math.max(target - booked, 0) : 0;
 
@@ -36,6 +37,8 @@ export default function BarCard({ label, booked, target, isRamp }: BarCardProps)
         <p className="text-muted text-[10px] uppercase tracking-wider">{label}</p>
         {isRamp && target === 0 ? (
           <span className="text-amber text-xs font-semibold">Ramp</span>
+        ) : !hasData ? (
+          <span className="text-muted text-xs font-semibold">—</span>
         ) : (
           <span className={`text-xs font-semibold ${ragText(pct)}`}>
             {Math.round(pct)}%

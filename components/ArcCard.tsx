@@ -22,11 +22,12 @@ function ragClass(pct: number): string {
 function formatShort(val: number): string {
   if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
   if (val >= 1_000) return `$${(val / 1_000).toFixed(1)}K`;
-  if (val === 0) return "$0";
+  if (val === 0) return "—";
   return `$${val.toFixed(0)}`;
 }
 
 export default function ArcCard({ label, booked, target, isRamp }: ArcCardProps) {
+  const hasData = booked > 0 || target > 0;
   const pct = target > 0 ? Math.min((booked / target) * 100, 100) : 0;
   const gap = target > 0 ? Math.max(target - booked, 0) : 0;
   const color = ragColor(pct);
@@ -75,6 +76,8 @@ export default function ArcCard({ label, booked, target, isRamp }: ArcCardProps)
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {isRamp && target === 0 ? (
             <span className="text-amber text-lg font-bold">Ramp</span>
+          ) : !hasData ? (
+            <span className="text-muted text-2xl font-bold">—</span>
           ) : (
             <span className={`text-2xl font-bold ${ragClass(pct)}`}>
               {Math.round(pct)}%
