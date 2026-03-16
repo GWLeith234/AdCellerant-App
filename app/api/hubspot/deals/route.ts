@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchAllDeals } from "@/lib/hubspot";
-import { MOCK_DEALS } from "@/lib/mockData";
+import { MOCK_DEALS } from "@/lib/mockDeals";
 
 export async function GET() {
   try {
