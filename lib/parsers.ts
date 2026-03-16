@@ -215,52 +215,38 @@ function parseTargetsSheet(workbook: XLSX.WorkBook): TargetsByRepMonth {
 
   const range = XLSX.utils.decode_range(sheet["!ref"] || "A1");
 
-  // Find the TARGET PLAN section boundaries
-  let targetPlanStart = -1;
-  let targetPlanEnd = range.e.r;
-
-  // Section headers to detect boundaries (case-insensitive)
-  const sectionHeaders = ["board plan", "target plan", "growth plan"];
+  // Collect ALL occurrences of each rep across the entire sheet.
+  // The sheet has multiple sections (Board Plan, Target Plan, Growth Plan)
+  // each containing the same rep names. We want the TARGET PLAN rows,
+  // which are the SECOND occurrence of each rep name.
+  const repOccurrences: Record<string, number[]> = {
+    george: [],
+    andy: [],
+    alex: [],
+  };
 
   for (let r = 0; r <= range.e.r; r++) {
     const cell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
     if (!cell) continue;
     const label = String(cell.v || "").trim().toLowerCase();
 
-    if (label.includes("target plan")) {
-      targetPlanStart = r;
-    } else if (targetPlanStart >= 0) {
-      // Check if we've hit the next section (Growth Plan or another header)
-      for (const header of sectionHeaders) {
-        if (header !== "target plan" && label.includes(header)) {
-          targetPlanEnd = r;
-          break;
-        }
-      }
-      if (targetPlanEnd < range.e.r) break;
-    }
-  }
-
-  // If no TARGET PLAN header found, scan entire sheet as fallback
-  if (targetPlanStart < 0) {
-    targetPlanStart = 0;
-  }
-
-  // Find rep rows within the TARGET PLAN section only
-  const repRows: { rep: string; row: number }[] = [];
-
-  for (let r = targetPlanStart; r <= targetPlanEnd; r++) {
-    const cell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
-    if (!cell) continue;
-    const label = String(cell.v || "").trim().toLowerCase();
-
     if (label.includes("george leith") && label.includes("ca+v")) {
-      repRows.push({ rep: "george", row: r });
+      repOccurrences.george.push(r);
     } else if (label.includes("andy mcnab")) {
-      repRows.push({ rep: "andy", row: r });
+      repOccurrences.andy.push(r);
     } else if (label.includes("alex kirkley")) {
-      repRows.push({ rep: "alex", row: r });
+      repOccurrences.alex.push(r);
     }
+  }
+
+  // Use the SECOND occurrence (Target Plan) for each rep.
+  // Fall back to first occurrence if only one exists.
+  const repRows: { rep: string; row: number }[] = [];
+  for (const [rep, rows] of Object.entries(repOccurrences)) {
+    if (rows.length === 0) continue;
+    // Second occurrence = Target Plan; first = Board Plan
+    const targetRow = rows.length >= 2 ? rows[1] : rows[0];
+    repRows.push({ rep, row: targetRow });
   }
 
   // Read monthly targets from columns B-M (indices 1-12) for each rep row
