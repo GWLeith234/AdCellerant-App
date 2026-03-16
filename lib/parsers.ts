@@ -4,26 +4,34 @@ import type { BookedByRepMonth, TargetsByRepMonth } from "./types";
 
 const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** Map human names and common variations to rep keys */
-const REP_NAME_MAP: Record<string, string> = {
-  "george leith": "george",
-  "george": "george",
-  "andy mcnab": "andy",
-  "andy": "andy",
-  "alex kirkley": "alex",
-  "alex": "alex",
-};
+/** Partners assigned to Andy McNab (UK revenue line) */
+const ANDY_PARTNERS = new Set([
+  "ams",
+  "beettoo",
+  "convergence digital - uk",
+  "innocean",
+]);
 
-function resolveRep(raw: string): string | null {
-  const key = raw.trim().toLowerCase();
-  return REP_NAME_MAP[key] || null;
+function partnerToRep(partnerName: string): string {
+  const key = partnerName.trim().toLowerCase();
+  return ANDY_PARTNERS.has(key) ? "andy" : "george";
 }
 
 /**
  * Normalize month strings: "January" → "Jan", "jan" → "Jan", "Mar" → "Mar", etc.
+ * Also handles YYYY-MM format: "2026-01" → "Jan", "2026-03" → "Mar".
  */
 function normalizeMonth(raw: string): string | null {
   const trimmed = raw.trim();
+
+  // Handle YYYY-MM format (e.g. "2026-01" → "Jan")
+  const ymd = trimmed.match(/^\d{4}-(\d{2})$/);
+  if (ymd) {
+    const monthIdx = parseInt(ymd[1], 10) - 1;
+    if (monthIdx >= 0 && monthIdx < 12) return ALL_MONTHS[monthIdx];
+    return null;
+  }
+
   // Try matching against full and short month names
   for (const m of ALL_MONTHS) {
     if (trimmed.toLowerCase() === m.toLowerCase()) return m;
@@ -35,38 +43,70 @@ function normalizeMonth(raw: string): string | null {
 }
 
 /**
- * Parse booked revenue CSV.
- * Expected columns: rep (or Rep), month (or Month), amount (or Amount/Revenue)
- * Rep values can be full names ("George Leith") or keys ("george").
+ * Parse booked revenue CSV (pivot table format).
+ *
+ * Row 1: "Billing Start Date", then month columns (2026-01, 2026-02, ...)
+ * Row 2: "Partner Name", then "Total Revenue" repeated
+ * Rows 3+: Partner name in col A, dollar amounts per month
+ * Last row (totals with empty partner name) is skipped.
+ *
+ * Partners are assigned to reps:
+ *   AMS, Beettoo, Convergence Digital - UK, Innocean → andy
+ *   All others → george
  */
 export function parseBookedCSV(file: File): Promise<BookedByRepMonth> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
-      header: true,
+      header: false,
       skipEmptyLines: true,
       complete(results) {
+        const rows = results.data as string[][];
+        if (rows.length < 3) {
+          reject(new Error("CSV too short — expected header row, label row, then data rows"));
+          return;
+        }
+
+        // Row 0 = month headers: ["Billing Start Date", "2026-01", "2026-02", ...]
+        const headerRow = rows[0];
+
+        // Build month map: column index → month short name
+        const monthByCol: Record<number, string> = {};
+        for (let c = 1; c < headerRow.length; c++) {
+          const month = normalizeMonth(headerRow[c] || "");
+          if (month) monthByCol[c] = month;
+        }
+
+        if (Object.keys(monthByCol).length === 0) {
+          reject(new Error("No valid month columns found in header row"));
+          return;
+        }
+
+        // Skip row 1 (label row with "Partner Name" / "Total Revenue")
+        // Process rows 2+ as data
         const booked: BookedByRepMonth = {};
-        for (const row of results.data as Record<string, string>[]) {
-          const rawRep = (row.rep || row.Rep || row.REP || "").trim();
-          const rep = resolveRep(rawRep);
-          if (!rep) continue;
 
-          const rawMonth = (row.month || row.Month || row.MONTH || "").trim();
-          const month = normalizeMonth(rawMonth);
-          if (!month) continue;
+        for (let r = 2; r < rows.length; r++) {
+          const row = rows[r];
+          const partnerName = (row[0] || "").trim();
 
-          const amount = parseFloat(
-            (row.amount || row.Amount || row.AMOUNT || row.Revenue || row.revenue || "0")
-              .replace(/[$,]/g, "")
-          );
-          if (isNaN(amount)) continue;
+          // Skip empty partner name (totals row) or blank rows
+          if (!partnerName) continue;
 
-          if (!booked[rep]) booked[rep] = {};
-          booked[rep][month] = (booked[rep][month] || 0) + amount;
+          const rep = partnerToRep(partnerName);
+
+          for (const [colStr, month] of Object.entries(monthByCol)) {
+            const col = parseInt(colStr, 10);
+            const rawVal = (row[col] || "").replace(/[$,]/g, "").trim();
+            const amount = rawVal ? parseFloat(rawVal) : 0;
+            if (isNaN(amount) || amount === 0) continue;
+
+            if (!booked[rep]) booked[rep] = {};
+            booked[rep][month] = (booked[rep][month] || 0) + amount;
+          }
         }
 
         if (Object.keys(booked).length === 0) {
-          reject(new Error("No valid rows found. Expected columns: rep, month, amount"));
+          reject(new Error("No valid partner revenue data found in CSV"));
           return;
         }
 
