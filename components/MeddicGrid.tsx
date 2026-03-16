@@ -18,18 +18,18 @@ const MEDDIC_LABELS: Record<keyof MeddicScore, string> = {
 function statusText(val: string): string {
   if (!val) return "Not assessed";
   const v = val.toLowerCase();
-  if (v === "ok" || v === "yes" || v === "done" || v === "complete") return "Confirmed";
-  if (v === "partial" || v === "wip" || v === "started" || v === "in progress") return "In progress";
-  if (v === "gap" || v === "no" || v === "missing") return "Gap identified";
+  if (v === "ok" || v === "yes" || v === "done" || v === "complete") return "✅ Confirmed";
+  if (v === "partial" || v === "wip" || v === "started" || v === "in progress") return "⚠️ Partial";
+  if (v === "gap" || v === "no" || v === "missing") return "❌ Gap";
   return val;
 }
 
 function borderColor(val: string): string {
-  if (!val) return "border-l-muted";
+  if (!val) return "#555";
   const v = val.toLowerCase();
-  if (v === "ok" || v === "yes" || v === "done" || v === "complete") return "border-l-green";
-  if (v === "partial" || v === "wip" || v === "started" || v === "in progress") return "border-l-amber";
-  return "border-l-orange";
+  if (v === "ok" || v === "yes" || v === "done" || v === "complete") return "#2ECC8A";
+  if (v === "partial" || v === "wip" || v === "started" || v === "in progress") return "#F5A623";
+  return "#FF4A2D";
 }
 
 export default function MeddicGrid({ meddic }: MeddicGridProps) {
@@ -40,7 +40,8 @@ export default function MeddicGrid({ meddic }: MeddicGridProps) {
       {entries.map(([key, val]) => (
         <div
           key={key}
-          className={`bg-navy/50 rounded-lg px-3 py-2.5 border-l-[3px] ${borderColor(val)}`}
+          className="bg-navy/50 rounded-lg px-3 py-2.5 border-l-[3px]"
+          style={{ borderLeftColor: borderColor(val) }}
         >
           <p className="text-muted text-[10px] uppercase tracking-wider">
             {MEDDIC_LABELS[key]}

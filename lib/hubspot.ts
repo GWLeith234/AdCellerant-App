@@ -20,11 +20,12 @@ const DEAL_PROPERTIES = [
 ];
 
 const STAGE_MAP: Record<string, { category: string; probability: number; label: string; stageClass: string }> = {
-  appointmentscheduled: { category: "leads", probability: 25, label: "Appointment Scheduled", stageClass: "stage-lead" },
-  qualifiedtobuy: { category: "leads", probability: 25, label: "Qualified to Buy", stageClass: "stage-lead" },
-  presentationscheduled: { category: "prop", probability: 50, label: "Presentation Scheduled", stageClass: "stage-prop" },
-  decisionmakerboughtin: { category: "neg", probability: 75, label: "Decision Maker Bought In", stageClass: "stage-neg" },
+  appointmentscheduled: { category: "leads", probability: 25, label: "Qualification", stageClass: "stage-lead" },
+  qualifiedtobuy: { category: "leads", probability: 25, label: "Needs Analysis", stageClass: "stage-lead" },
+  presentationscheduled: { category: "prop", probability: 50, label: "Proposal", stageClass: "stage-prop" },
+  decisionmakerboughtin: { category: "neg", probability: 75, label: "Negotiation", stageClass: "stage-neg" },
   closedwon: { category: "cw", probability: 100, label: "Closed Won", stageClass: "stage-cw" },
+  closedlost: { category: "cl", probability: 0, label: "Closed Lost", stageClass: "stage-cl" },
 };
 
 const OWNER_MAP: Record<string, string> = {
