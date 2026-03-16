@@ -113,12 +113,12 @@ export default function RepCard({
         ) : (
           <div className="grid grid-cols-2 gap-2">
             <RepStatTile
-              label="Mar Booked"
+              label="Mar Bkd"
               value={formatShort(marBooked)}
               color={marBooked > 0 ? "text-green" : "text-muted"}
             />
             <RepStatTile
-              label="Mar Target"
+              label="Mar Tgt"
               value={formatShort(marTarget)}
               color="text-white"
             />
@@ -128,7 +128,7 @@ export default function RepCard({
               color={marTarget > 0 ? ragColor(marAtt) : "text-muted"}
             />
             <RepStatTile
-              label="Q1 Booked"
+              label="Q1 Bkd"
               value={formatShort(q1Booked)}
               color={q1Booked > 0 ? "text-green" : "text-muted"}
             />
