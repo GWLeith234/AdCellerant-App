@@ -91,9 +91,10 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     }
     try {
       const res = await fetch("/api/hubspot/deals");
-      if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `API error: ${res.status}`);
+      }
       dispatch({ type: "SET_DEALS", deals: data.deals });
       cacheDeals(data.deals);
       lastRefreshRef.current = new Date().toLocaleTimeString();
