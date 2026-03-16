@@ -1,4 +1,7 @@
-const HUBSPOT_ACCESS_TOKEN = process.env.HUBSPOT_ACCESS_TOKEN || "";
+// Read token at request time, not module init, so Railway runtime vars are picked up
+function getToken(): string {
+  return process.env.HUBSPOT_ACCESS_TOKEN || "";
+}
 const BASE_URL = "https://api.hubspot.com";
 
 const DEAL_PROPERTIES = [
@@ -349,7 +352,7 @@ export async function fetchAllDeals(): Promise<ParsedDeal[]> {
   const res = await fetch(`${BASE_URL}/crm/v3/objects/deals/search`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${getToken()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -394,7 +397,7 @@ export async function fetchDealById(id: string): Promise<ParsedDeal> {
     `${BASE_URL}/crm/v3/objects/deals/${id}?properties=${DEAL_PROPERTIES.join(",")}`,
     {
       headers: {
-        Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${getToken()}`,
         "Content-Type": "application/json",
       },
       cache: "no-store",
@@ -416,7 +419,7 @@ export async function updateDeal(
   const res = await fetch(`${BASE_URL}/crm/v3/objects/deals/${id}`, {
     method: "PATCH",
     headers: {
-      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${getToken()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ properties }),
@@ -435,7 +438,7 @@ export async function addNoteToDeal(dealId: string, noteBody: string): Promise<v
   const res = await fetch(`${BASE_URL}/crm/v3/objects/notes`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${getToken()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -468,7 +471,7 @@ export async function appendResearchNote(dealId: string, note: string): Promise<
     `${BASE_URL}/crm/v3/objects/deals/${dealId}?properties=description`,
     {
       headers: {
-        Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${getToken()}`,
         "Content-Type": "application/json",
       },
       cache: "no-store",
@@ -525,7 +528,7 @@ export async function appendResearchNote(dealId: string, note: string): Promise<
   const updateRes = await fetch(`${BASE_URL}/crm/v3/objects/deals/${dealId}`, {
     method: "PATCH",
     headers: {
-      Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${getToken()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ properties: { description: newDesc } }),
