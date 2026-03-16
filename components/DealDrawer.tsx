@@ -288,7 +288,8 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       Parsing...
                     </>
                   ) : (
-                    "Parse & Preview"
+                    <><span>&#10022;</span> Parse &amp; Preview Changes</>
+
                   )}
                 </button>
               </div>
@@ -329,7 +330,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       disabled={logStatus === "saving"}
                       className="bg-green/20 text-green text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-green/30 transition-colors disabled:opacity-50"
                     >
-                      {logStatus === "saving" ? "Saving..." : "Confirm"}
+                            {logStatus === "saving" ? "Saving..." : "Confirm & Write to HubSpot"}
                     </button>
                     <button
                       onClick={() => { setLogOps(null); setLogSummary(""); setLogStatus("idle"); }}
@@ -499,7 +500,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                 rel="noopener noreferrer"
                 className="block w-full text-center bg-navy/50 border border-border text-blue text-sm font-medium py-2.5 rounded-lg hover:bg-navy hover:border-blue/30 transition-colors"
               >
-                Open in HubSpot
+                Open in HubSpot &#x1F517;
               </a>
             </div>
           </div>
