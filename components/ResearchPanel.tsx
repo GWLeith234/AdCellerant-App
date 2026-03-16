@@ -42,9 +42,13 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ deal }),
         });
-        if (!res.ok) throw new Error("Research synthesis failed");
         const result = await res.json();
-        if (result.error) throw new Error(result.error);
+        if (!res.ok || result.error) {
+          const msg = result.error?.includes("not configured")
+            ? "AI features require ANTHROPIC_API_KEY to be set in Railway. Contact George to configure."
+            : result.error || "Research synthesis failed";
+          throw new Error(msg);
+        }
         sessionCache.set(deal.id, result);
         setData(result);
       } catch (err) {

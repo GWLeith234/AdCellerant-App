@@ -98,6 +98,9 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   // --- Research panel state ---
   const [showResearch, setShowResearch] = useState(false);
 
+  // --- Deep research trigger state ---
+  const [researchToast, setResearchToast] = useState(false);
+
   // Reset all states when deal changes
   useEffect(() => {
     setLogText("");
@@ -145,9 +148,13 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: logText, deal }),
       });
-      if (!res.ok) throw new Error("Parse failed");
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (!res.ok || data.error) {
+        const msg = data.error?.includes("not configured")
+          ? "AI features require ANTHROPIC_API_KEY to be set in Railway. Contact George to configure."
+          : data.error || "Parse failed";
+        throw new Error(msg);
+      }
       setLogOps(data.ops || []);
       setLogSummary(data.summary || "");
       setLogStatus("idle");
@@ -213,14 +220,19 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deal, tone: emailTone }),
       });
-      if (!res.ok) throw new Error("Email generation failed");
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      if (!res.ok || data.error) {
+        const msg = data.error?.includes("not configured")
+          ? "AI features require ANTHROPIC_API_KEY to be set in Railway. Contact George to configure."
+          : data.error || "Email generation failed";
+        throw new Error(msg);
+      }
       setEmailSubject(data.subject || "");
       setEmailBody(data.body || "");
-    } catch {
-      setEmailSubject("Error generating email");
-      setEmailBody("Please try again or draft manually.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Email generation failed";
+      setEmailSubject("Error");
+      setEmailBody(msg);
     } finally {
       setEmailLoading(false);
     }
@@ -232,6 +244,15 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setEmailCopied(true);
     setTimeout(() => setEmailCopied(false), 2000);
   }, [emailSubject, emailBody]);
+
+  const handleDeepResearch = useCallback(() => {
+    if (!deal) return;
+    const trigger = `New Lead — ${deal.name}, ${deal.persona || "Unknown"}`;
+    navigator.clipboard.writeText(trigger);
+    window.open("https://claude.ai/project/019c2f71-edd1-7381-8879-219db0696fd0", "_blank");
+    setResearchToast(true);
+    setTimeout(() => setResearchToast(false), 3000);
+  }, [deal]);
 
   if (!deal) return null;
 
@@ -279,6 +300,33 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                 </button>
               )}
             </DrawerSection>
+
+            {/* Deep Research trigger */}
+            <div className="mb-4">
+              <button
+                onClick={handleDeepResearch}
+                className="w-full text-left cursor-pointer transition-colors"
+                style={{
+                  background: deal.hasResearch ? "transparent" : "rgba(139, 92, 246, 0.15)",
+                  border: deal.hasResearch ? "1px solid rgba(139, 92, 246, 0.25)" : "1px solid rgba(139, 92, 246, 0.4)",
+                  color: deal.hasResearch ? "rgba(167, 139, 250, 0.6)" : "#A78BFA",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontSize: 11,
+                  fontWeight: 600,
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(139, 92, 246, 0.25)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = deal.hasResearch
+                    ? "transparent"
+                    : "rgba(139, 92, 246, 0.15)";
+                }}
+              >
+                {deal.hasResearch ? "↺ Update Research" : "✦ Launch Deep Research"}
+              </button>
+            </div>
 
             {/* Section 2: Log to HubSpot */}
             <DrawerSection title="Log to HubSpot" icon={IconLog}>
@@ -487,6 +535,23 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       {/* Research Panel overlay */}
       {showResearch && (
         <ResearchPanel deal={deal} onClose={() => setShowResearch(false)} />
+      )}
+
+      {/* Deep Research toast — fixed bottom center */}
+      {researchToast && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 text-white text-center whitespace-nowrap"
+          style={{
+            background: "#2ECC8A",
+            padding: "10px 20px",
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            zIndex: 999,
+          }}
+        >
+          ✅ Research trigger copied — paste it into Claude
+        </div>
       )}
     </>
   );

@@ -6,6 +6,13 @@ function getClient() {
 }
 
 export async function POST(request: Request) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({
+      error: "ANTHROPIC_API_KEY not configured",
+      message: "Add ANTHROPIC_API_KEY to Railway environment variables",
+    }, { status: 503 });
+  }
+
   try {
     const body = await request.json();
     const { deal } = body;
