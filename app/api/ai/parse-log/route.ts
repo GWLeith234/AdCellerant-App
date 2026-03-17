@@ -94,8 +94,14 @@ Return ONLY valid JSON, no markdown fences.`,
         raw: raw.substring(0, 500),
       }, { status: 500 });
     }
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : "AI parse error";
+  } catch (error: unknown) {
+    console.error("Parse-log error:", error);
+    let msg = "Log parsing failed";
+    if (error instanceof Anthropic.APIError) {
+      msg = `AI service error (${error.status}). Try again in a moment.`;
+    } else if (error instanceof Error) {
+      msg = error.message;
+    }
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

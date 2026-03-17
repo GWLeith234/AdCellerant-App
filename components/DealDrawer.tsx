@@ -231,8 +231,8 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       setEmailBody(data.body || "");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Email generation failed";
-      setEmailSubject("Error");
-      setEmailBody(msg);
+      setEmailSubject("");
+      setEmailBody(`[Error] ${msg}`);
     } finally {
       setEmailLoading(false);
     }
