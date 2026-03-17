@@ -54,10 +54,31 @@ export default function DrawerHero({ deal }: DrawerHeroProps) {
         )}
       </div>
 
-      {/* Row 2: Deal name */}
-      <h2 className="text-white font-bold leading-tight" style={{ fontSize: "18px" }}>
-        {deal.name}
-      </h2>
+      {/* Row 2: Logo + Deal name */}
+      <div className="flex items-center gap-3">
+        {deal.domain && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`https://logo.clearbit.com/${deal.domain}`}
+            alt=""
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 8,
+              objectFit: "contain",
+              background: "#ffffff",
+              padding: 4,
+              flexShrink: 0,
+            }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        )}
+        <h2 className="text-white font-bold leading-tight" style={{ fontSize: "18px" }}>
+          {deal.name}
+        </h2>
+      </div>
 
       {/* Row 3: Sub-line */}
       {deal.sub && (

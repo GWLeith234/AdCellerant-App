@@ -145,39 +145,42 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
             src={`https://logo.clearbit.com/${deal.domain}`}
             alt=""
             style={{
-              width: 40,
-              height: 40,
+              width: 36,
+              height: 36,
               borderRadius: 6,
               objectFit: "contain",
               background: "#ffffff",
               padding: 3,
-              display: "block",
               flexShrink: 0,
+              display: "block",
             }}
             onError={(e) => {
-              e.currentTarget.style.display = "none";
+              const t = e.currentTarget;
+              t.style.display = "none";
+              const placeholder = t.nextElementSibling as HTMLElement;
+              if (placeholder) placeholder.style.display = "flex";
             }}
           />
-        ) : (
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 6,
-              background: "#0D1B2E",
-              border: "0.5px solid #2A3F5C",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              color: "#6B7F96",
-              fontSize: 16,
-              fontWeight: 600,
-            }}
-          >
-            {deal.name.charAt(0)}
-          </div>
-        )}
+        ) : null}
+        {/* Fallback placeholder — shows if no domain OR if Clearbit returns 404 */}
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 6,
+            background: "#0D1B2E",
+            border: "0.5px solid #2A3F5C",
+            display: deal.domain ? "none" : "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 13,
+            fontWeight: 700,
+            color: "#6B7F96",
+            flexShrink: 0,
+          }}
+        >
+          {deal.name.charAt(0).toUpperCase()}
+        </div>
 
         {/* Stage info */}
         <div style={{ flex: 1, minWidth: 0 }}>
