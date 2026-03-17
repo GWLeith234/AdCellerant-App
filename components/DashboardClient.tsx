@@ -7,7 +7,8 @@ import { getRepConfig } from "@/lib/reps";
 import { useRevenueData } from "@/lib/RevenueDataContext";
 import DealGridSkeleton from "./DealGridSkeleton";
 import TeamGrid from "./TeamGrid";
-import ScorecardStrip from "./ScorecardStrip";
+import ScorecardPanel from "./ScorecardPanel";
+import RepHeader from "./RepHeader";
 import FocusedPipeline from "./FocusedPipeline";
 import DealDrawer from "./DealDrawer";
 import ResearchRequestModal from "./ResearchRequestModal";
@@ -156,7 +157,8 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
       {/* Focused rep view */}
       {!state.dealsLoading && isFocused && repConfig && (
         <>
-          <ScorecardStrip
+          <RepHeader config={repConfig} />
+          <ScorecardPanel
             config={repConfig}
             booked={bookedByRepMonth}
             targets={targetsByRepMonth}

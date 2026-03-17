@@ -35,3 +35,28 @@ body {
     display: none;
   }
 }
+
+/* ── Scorecard 5-column grid ─────────────────────────── */
+.scorecard-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 768px) {
+  .scorecard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  /* Annual spans full width on 2-col layout */
+  .scorecard-grid > :nth-child(5) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .scorecard-grid {
+    grid-template-columns: 1fr;
+  }
+  .scorecard-grid > :nth-child(5) {
+    grid-column: auto;
+  }
+}
