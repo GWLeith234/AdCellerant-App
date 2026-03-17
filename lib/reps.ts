@@ -45,7 +45,7 @@ export const REP_CONFIGS: RepConfig[] = [
   {
     key: "vendasta",
     name: "Vendasta",
-    role: "Channel Partner",
+    role: "Strategic Partnership \u00b7 CA",
     photo: "/reps/vendasta.png",
     borderColor: "#2ECC8A",
     gradientFrom: "#2ECC8A",
