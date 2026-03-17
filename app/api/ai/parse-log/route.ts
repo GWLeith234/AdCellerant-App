@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { dealHealthScore } from "@/lib/dealHealth";
 
 function getClient() {
   return new Anthropic();
@@ -85,6 +86,23 @@ Return ONLY valid JSON, no markdown fences.`,
 
     try {
       const parsed = JSON.parse(cleaned);
+
+      // Check for stage change ops and warn if deal is incomplete
+      const stageOp = parsed.ops?.find(
+        (op: { type: string }) => op.type === "update_stage"
+      );
+      if (stageOp && deal) {
+        const health = dealHealthScore(deal);
+        if (health.score < 60) {
+          parsed.warning = {
+            type: "stage_gate",
+            score: health.score,
+            missing: health.missing,
+            message: `Deal is ${health.score}% complete. Advancing to ${stageOp.newValue} with gaps may reduce close probability.`,
+          };
+        }
+      }
+
       return NextResponse.json(parsed);
     } catch (parseErr) {
       console.error("Parse-log error:", parseErr);

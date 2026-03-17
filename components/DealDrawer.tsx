@@ -88,6 +88,11 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   const [logSummary, setLogSummary] = useState("");
   const [logStatus, setLogStatus] = useState<"idle" | "parsing" | "saving" | "saved" | "error">("idle");
   const [logError, setLogError] = useState<string | null>(null);
+  const [stageWarning, setStageWarning] = useState<{
+    score: number;
+    missing: string[];
+    message: string;
+  } | null>(null);
 
   // --- Draft email state ---
   const [emailTone, setEmailTone] = useState<ToneKey>("warm");
@@ -115,6 +120,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setLogSummary("");
     setLogStatus("idle");
     setLogError(null);
+    setStageWarning(null);
     setEmailTone("warm");
     setEmailSubject("");
     setEmailBody("");
@@ -167,6 +173,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       }
       setLogOps(data.ops || []);
       setLogSummary(data.summary || "");
+      setStageWarning(data.warning || null);
       setLogStatus("idle");
     } catch (err) {
       setLogError(err instanceof Error ? err.message : "Parse failed");
@@ -486,6 +493,75 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       ))}
                     </tbody>
                   </table>
+                  {/* Stage gate warning */}
+                  {stageWarning && (
+                    <div
+                      style={{
+                        border: "0.5px solid rgba(245,166,35,0.4)",
+                        background: "rgba(245,166,35,0.06)",
+                        borderRadius: 8,
+                        padding: "12px 14px",
+                        marginTop: 8,
+                        marginBottom: 8,
+                      }}
+                    >
+                      <p style={{ fontSize: 11, fontWeight: 600, color: "#F5A623", marginBottom: 4 }}>
+                        ⚠ Stage advance — deal incomplete
+                      </p>
+                      <p style={{ fontSize: 10, color: "#F0F4F8", marginBottom: 6 }}>
+                        {stageWarning.score}% complete · {stageWarning.missing.length} items missing
+                      </p>
+                      <ul style={{ fontSize: 10, color: "#6B7F96", marginBottom: 8, paddingLeft: 14 }}>
+                        {stageWarning.missing.slice(0, 3).map((item) => (
+                          <li key={item} style={{ marginBottom: 2 }}>{item}</li>
+                        ))}
+                        {stageWarning.missing.length > 3 && (
+                          <li style={{ color: "#F5A623" }}>+{stageWarning.missing.length - 3} more</li>
+                        )}
+                      </ul>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => {
+                            setLogOps(null);
+                            setLogSummary("");
+                            setStageWarning(null);
+                            setLogStatus("idle");
+                            meddicRef.current?.scrollIntoView({ behavior: "smooth" });
+                          }}
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            color: "#2ECC8A",
+                            background: "rgba(46,204,138,0.15)",
+                            border: "0.5px solid rgba(46,204,138,0.3)",
+                            borderRadius: 6,
+                            padding: "4px 10px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Complete first
+                        </button>
+                        <button
+                          onClick={() => {
+                            setStageWarning(null);
+                            handleConfirmLog();
+                          }}
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 500,
+                            color: "#6B7F96",
+                            background: "none",
+                            border: "0.5px solid #2A3F5C",
+                            borderRadius: 6,
+                            padding: "4px 10px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Advance anyway
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2 mt-2">
                     <button
                       onClick={handleConfirmLog}
@@ -495,7 +571,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       {logStatus === "saving" ? "Saving..." : "Confirm & Write"}
                     </button>
                     <button
-                      onClick={() => { setLogOps(null); setLogSummary(""); setLogStatus("idle"); }}
+                      onClick={() => { setLogOps(null); setLogSummary(""); setStageWarning(null); setLogStatus("idle"); }}
                       className="bg-navy/50 text-muted text-xs font-medium px-3 py-1.5 rounded-lg hover:text-white transition-colors"
                     >
                       Cancel
