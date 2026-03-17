@@ -12,6 +12,7 @@ import RepHeader from "./RepHeader";
 import FocusedPipeline from "./FocusedPipeline";
 import DealDrawer from "./DealDrawer";
 import ResearchRequestModal from "./ResearchRequestModal";
+import SubNav from "./SubNav";
 
 const CACHE_KEY = "adcellerant_deals_cache";
 
@@ -120,32 +121,24 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
 
   return (
     <div>
-      {/* Refresh bar */}
-      <div className="flex items-center justify-end mb-4">
-        {state.dealsError && !state.hubspotUnavailable && (
-          <span className="text-orange text-xs bg-orange/10 border border-orange/30 px-2.5 py-1 rounded-lg mr-auto">
+      {/* Sub-navigation bar */}
+      <SubNav
+        rep={rep}
+        userEmail={userEmail}
+        refreshing={refreshing}
+        dealsLoading={state.dealsLoading}
+        isMock={state.hubspotUnavailable}
+        onRefresh={() => loadDeals(true)}
+      />
+
+      {/* Error banner */}
+      {state.dealsError && !state.hubspotUnavailable && (
+        <div className="mb-4">
+          <span className="text-orange text-xs bg-orange/10 border border-orange/30 px-2.5 py-1 rounded-lg">
             {state.dealsError}
           </span>
-        )}
-        <button
-          onClick={() => loadDeals(true)}
-          disabled={refreshing || state.dealsLoading}
-          className="flex items-center gap-1.5 text-xs text-muted hover:text-white bg-navy/50 hover:bg-card border border-border px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-          title="Refresh HubSpot deals"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            className={refreshing ? "animate-spin" : ""}
-          >
-            <path d="M1 7a6 6 0 0111.2-3M13 7a6 6 0 01-11.2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M12.2 1v3h-3M1.8 13v-3h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {refreshing ? "Refreshing..." : "Refresh"}
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Deals loading skeleton */}
       {state.dealsLoading && (

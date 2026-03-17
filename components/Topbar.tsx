@@ -1,8 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 /* ── SVG Skylines ─────────────────────────────────────── */
 
@@ -241,15 +239,22 @@ function LondonSkyline() {
 const orb = "var(--font-orbitron), monospace";
 
 export default function Topbar() {
-  const router = useRouter();
   const [times, setTimes] = useState({ denver: "", saskatoon: "", london: "" });
-  const [hubspotLive, setHubspotLive] = useState(false);
+  const [formattedDate, setFormattedDate] = useState("");
 
   useEffect(() => {
-    fetch("/api/hubspot/deals")
-      .then((res) => res.json())
-      .then((data) => setHubspotLive(!data.mock))
-      .catch(() => setHubspotLive(false));
+    const date = new Date().toLocaleDateString("en-US", {
+      timeZone: "America/Denver",
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    // Format as "MONDAY · MARCH 16 · 2026"
+    const parts = date.replace(",", "").split(" ");
+    // parts: ["Monday", "March", "16", "2026"]
+    const formatted = `${parts[0]} · ${parts[1]} ${parts[2]} · ${parts[3]}`.toUpperCase();
+    setFormattedDate(formatted);
   }, []);
 
   useEffect(() => {
@@ -272,11 +277,6 @@ export default function Topbar() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
-
-  function handleRefresh() {
-    router.refresh();
-    window.location.reload();
-  }
 
   const cities = [
     { label: "DENVER", time: times.denver, Skyline: DenverSkyline },
@@ -309,14 +309,15 @@ export default function Topbar() {
           flexShrink: 0,
         }}
       >
-        {/* A) AdCellerant logo */}
+        {/* A) AdCellerant icon */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logos/adcellerant-white.png"
-          alt="AdCellerant"
+          src="/logos/adcellerant-icon.png"
+          alt=""
           style={{
-            height: 34,
-            width: "auto",
+            width: 36,
+            height: 36,
+            objectFit: "contain",
             mixBlendMode: "screen",
             flexShrink: 0,
           }}
@@ -357,64 +358,19 @@ export default function Topbar() {
             COMMAND CENTER
           </span>
 
-          {/* C) Small links */}
-          <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
-            <span
-              onClick={handleRefresh}
-              style={{
-                fontFamily: orb,
-                fontSize: 6,
-                color: "#6B7F96",
-                letterSpacing: 1,
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#F0F4F8")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#6B7F96")}
-            >
-              ⟳ Refresh
-            </span>
-            <Link
-              href="/admin"
-              style={{
-                fontFamily: orb,
-                fontSize: 6,
-                color: "#6B7F96",
-                letterSpacing: 1,
-                cursor: "pointer",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#F0F4F8")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#6B7F96")}
-            >
-              ⚙ Admin
-            </Link>
-          </div>
+          {/* C) Date at HQ */}
+          <span
+            style={{
+              fontFamily: "var(--font-orbitron, monospace)",
+              fontSize: 7,
+              color: "#4FA3D1",
+              letterSpacing: 1,
+              opacity: 0.7,
+            }}
+          >
+            {formattedDate}
+          </span>
         </div>
-
-        {/* Status badge — never overlaps text */}
-        <span
-          style={{
-            fontFamily: orb,
-            fontSize: 7,
-            fontWeight: 700,
-            letterSpacing: 1,
-            padding: "3px 8px",
-            borderRadius: 4,
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            marginLeft: 12,
-            border: hubspotLive
-              ? "1px solid rgba(46,204,138,0.3)"
-              : "1px solid rgba(245,166,35,0.3)",
-            background: hubspotLive
-              ? "rgba(46,204,138,0.1)"
-              : "rgba(245,166,35,0.1)",
-            color: hubspotLive ? "#2ECC8A" : "#F5A623",
-          }}
-          className="hidden-below-480"
-        >
-          {hubspotLive ? "● Live" : "⚠ Mock"}
-        </span>
       </div>
 
       {/* ── RIGHT PANEL — City panels ── */}
