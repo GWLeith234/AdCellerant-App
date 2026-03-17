@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdCellerantIcon } from "@/components/AdCellerantIcon";
 
 /* ── SVG Skylines ─────────────────────────────────────── */
 
@@ -310,18 +311,7 @@ export default function Topbar() {
         }}
       >
         {/* A) AdCellerant icon */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logos/adcellerant-icon.png"
-          alt=""
-          style={{
-            width: 36,
-            height: 36,
-            objectFit: "contain",
-            mixBlendMode: "screen",
-            flexShrink: 0,
-          }}
-        />
+        <AdCellerantIcon size={38} />
 
         {/* B) Brand text block */}
         <div
