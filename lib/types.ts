@@ -28,6 +28,4 @@ export type AppAction =
   | { type: "SET_DEALS"; deals: ParsedDeal[] }
   | { type: "SET_DEALS_LOADING"; loading: boolean }
   | { type: "SET_DEALS_ERROR"; error: string | null }
-  | { type: "SET_HUBSPOT_UNAVAILABLE"; unavailable: boolean }
-  | { type: "SET_BOOKED"; booked: BookedByRepMonth }
-  | { type: "SET_TARGETS"; targets: TargetsByRepMonth };
+  | { type: "SET_HUBSPOT_UNAVAILABLE"; unavailable: boolean };

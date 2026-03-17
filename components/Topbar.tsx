@@ -1,9 +1,37 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import WorldClock from "./WorldClock";
+import { useRevenueData } from "@/lib/RevenueDataContext";
 
 export default function Topbar() {
+  const { dataSource, hasRevenueData } = useRevenueData();
+  const [hubspotLive, setHubspotLive] = useState(false);
+
+  // Check HubSpot status once
+  useEffect(() => {
+    fetch("/api/hubspot/deals")
+      .then((res) => res.json())
+      .then((data) => setHubspotLive(!data.mock))
+      .catch(() => setHubspotLive(false));
+  }, []);
+
+  // Status pill logic
+  let pillLabel: string;
+  let pillColor: string;
+  if (hubspotLive) {
+    pillLabel = "● Live";
+    pillColor = "text-green bg-green/10 border-green/30";
+  } else if (hasRevenueData && dataSource === "csv") {
+    pillLabel = "✓ Data";
+    pillColor = "text-green bg-green/10 border-green/30";
+  } else {
+    pillLabel = "⚠ Mock";
+    pillColor = "text-amber bg-amber/10 border-amber/30";
+  }
+
   return (
     <header
       className="sticky top-0 z-50 border-b border-border flex items-center"
@@ -52,8 +80,21 @@ export default function Topbar() {
           </div>
         </div>
 
-        {/* Right: clocks */}
+        {/* Right: admin link + status pill + clocks */}
         <div className="hidden sm:flex items-center gap-6">
+          {/* Status pill */}
+          <span className={`text-[10px] font-medium px-2 py-0.5 rounded border ${pillColor}`}>
+            {pillLabel}
+          </span>
+
+          {/* Admin link */}
+          <Link
+            href="/admin"
+            className="text-[10px] text-muted hover:text-white transition-colors"
+          >
+            ⚙ Admin
+          </Link>
+
           <WorldClock label="London" timezone="Europe/London" />
           <WorldClock label="Saskatoon" timezone="America/Regina" />
           <WorldClock label="Denver" timezone="America/Denver" />
