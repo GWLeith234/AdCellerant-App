@@ -11,7 +11,8 @@
       "contacts": [{ "n":"Jamie Morrison", "r":"CEO / Economic Buyer", "i":"JM" }],
       "nda":"Signed", "msa":"Out", "sow":"Out", "credit":"Returned", "bizdev":"In progress", "partner":"Not started",
       "action1":"CALL — closes TODAY", "action2":"Log outcome in HubSpot",
-      "persona":"Partner Agency", "vend": false, "activity":"Mar 13", "hasResearch": true
+      "persona":"Partner Agency", "vend": false, "activity":"Mar 13", "hasResearch": true,
+      "meddicNotes": { "Metrics":"Revenue uplift $180K/yr via MZ Electrical Denver expansion","EconBuyer":"Jamie Morrison CEO confirmed as economic buyer — final sign-off authority","Criteria":"RFP scored top on geo-targeting and attribution capabilities","Process":"SOW and MSA under legal review — awaiting Jamie's sign-off","Pain":"Fragmented vendor stack, no unified attribution across Denver metro","Champion":"" }
     },
     {
       "id": "43402471685", "hsId": "43402471685",
@@ -24,7 +25,8 @@
       "contacts": [{ "n":"Sam Riemer", "r":"CEO / Signatory", "i":"SR" }, { "n":"Kelsey", "r":"Champion", "i":"KL" }],
       "nda":"Signed", "msa":"Signed", "sow":"Out", "credit":"Sent", "bizdev":"Complete", "partner":"In progress",
       "action1":"Confirm SOW receipt", "action2":"Schedule alignment call",
-      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 13", "hasResearch": true
+      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 13", "hasResearch": true,
+      "meddicNotes": { "Metrics":"Revenue uplift $120K/yr confirmed with Sam Riemer (CEO)","EconBuyer":"Sam Riemer CEO — engaged Mar 12, final signatory","Criteria":"Platform must integrate with existing HubSpot CRM and Salesforce","Process":"SOW out for signature — Kelsey coordinating internally","Pain":"No unified demand gen platform, leads falling through cracks","Champion":"Kelsey confirmed as internal champion — driving adoption" }
     },
     {
       "id": "55478493534", "hsId": "55478493534",
@@ -37,7 +39,8 @@
       "contacts": [{ "n":"Allen Cowie", "r":"President/CEO", "i":"AC" }, { "n":"Amanda Simonar", "r":"VP Finance", "i":"AS" }],
       "nda":"Signed", "msa":"Signed", "sow":"Signed", "credit":"N/A", "bizdev":"Complete", "partner":"Complete",
       "action1":"Setup Vendasta CRM", "action2":"Confirm AI trial",
-      "persona":"Partner Vendasta", "vend": true, "activity":"Mar 13", "hasResearch": true
+      "persona":"Partner Vendasta", "vend": true, "activity":"Mar 13", "hasResearch": true,
+      "meddicNotes": { "Metrics":"$9K SaaS subscription — recurring revenue model confirmed","EconBuyer":"Allen Cowie President/CEO — budget approved","Criteria":"Must integrate with Vendasta platform and existing CRM","Process":"All docs signed — onboarding via Vendasta CRM setup","Pain":"Manual processes for customer management, no automation","Champion":"Amanda Simonar VP Finance partially engaged — needs follow-up" }
     },
     {
       "id": "55757941160", "hsId": "55757941160",
@@ -50,7 +53,8 @@
       "contacts": [],
       "nda":"Signed", "msa":"Out", "sow":"Out", "credit":"Sent", "bizdev":"In progress", "partner":"Not started",
       "action1":"Maintain momentum", "action2":"Check in next week",
-      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 14", "hasResearch": true
+      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 14", "hasResearch": true,
+      "meddicNotes": { "Metrics":"$90K conference geo-targeting campaign — ROI benchmarks pending","EconBuyer":"Security conference marketing lead confirmed budget","Criteria":"Geo-targeting precision within 500m of conference venues","Process":"MSA and SOW under review — expecting sign-off by Apr 10","Pain":"Conference booth traffic down 30%, need digital supplement","Champion":"Internal advocate identified but not fully confirmed" }
     },
     {
       "id": "57021680659", "hsId": "57021680659",
@@ -63,7 +67,8 @@
       "contacts": [{ "n":"Jason Neman", "r":"CEO / Buyer", "i":"JN" }, { "n":"Kelsey Brossman", "r":"Champion", "i":"KB" }],
       "nda":"Unknown", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Check NDA status", "action2":"Confirm Jason engagement",
-      "persona":"Partner Agency", "vend": false, "activity":"Mar 13", "hasResearch": true
+      "persona":"Partner Agency", "vend": false, "activity":"Mar 13", "hasResearch": true,
+      "meddicNotes": { "Metrics":"","EconBuyer":"Jason Neman CEO confirmed as buyer — engaged Mar 13","Criteria":"","Process":"","Pain":"Agency model shifting — needs white-label partner for scale","Champion":"Kelsey Brossman driving internal buy-in" }
     },
     {
       "id": "57789734922", "hsId": "57789734922",
@@ -76,7 +81,8 @@
       "contacts": [],
       "nda":"Sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Confirm engagement", "action2":"Schedule follow-up",
-      "persona":"Partner Agency", "vend": false, "activity":"Mar 14", "hasResearch": true
+      "persona":"Partner Agency", "vend": false, "activity":"Mar 14", "hasResearch": true,
+      "meddicNotes": { "Metrics":"$250K partnership — revenue share model under discussion","EconBuyer":"Founder confirmed as economic buyer","Criteria":"Full-service programmatic + social capabilities required","Process":"NDA sent — MSA and SOW drafting pending","Pain":"Current vendor underperforming on ROAS targets","Champion":"Internal champion confirmed and actively selling upward" }
     },
     {
       "id": "51893919277", "hsId": "51893919277",
@@ -89,7 +95,8 @@
       "contacts": [],
       "nda":"Sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Advance to negotiation", "action2":"Confirm Vendasta status",
-      "persona":"Partner Media", "vend": false, "activity":"Mar 13", "hasResearch": true
+      "persona":"Partner Media", "vend": false, "activity":"Mar 13", "hasResearch": true,
+      "meddicNotes": { "Metrics":"$120K OTT/CTV campaign across US + CA auto dealer network","EconBuyer":"VP Marketing confirmed budget allocation","Criteria":"CTV reach across 200+ dealership DMAs required","Process":"Proposal delivered — awaiting feedback before negotiation","Pain":"Auto dealers losing share to digital-first competitors","Champion":"Regional director partially engaged — needs reinforcement" }
     },
     {
       "id": "51379595324", "hsId": "51379595324",
@@ -102,7 +109,8 @@
       "contacts": [],
       "nda":"Sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Follow up on proposal", "action2":"Move to negotiation",
-      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 12", "hasResearch": true
+      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 12", "hasResearch": true,
+      "meddicNotes": { "Metrics":"$120K B2B SaaS customer acquisition — targeting 200 new accounts","EconBuyer":"CEO confirmed as buyer — direct engagement","Criteria":"Must demonstrate measurable CAC reduction vs current channels","Process":"Proposal in review — champion pushing for negotiation","Pain":"High CAC on current channels, poor lead quality from events","Champion":"VP Sales confirmed as champion — actively advocating" }
     },
     {
       "id": "57030413735", "hsId": "57030413735",
@@ -115,7 +123,8 @@
       "contacts": [],
       "nda":"Not sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Follow up Mar 19", "action2":"Research pass needed",
-      "persona":"Partner Media", "vend": false, "activity":"Mar 12", "hasResearch": true
+      "persona":"Partner Media", "vend": false, "activity":"Mar 12", "hasResearch": true,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"Digital audio advertising fragmented across multiple vendors","Champion":"" }
     },
     {
       "id": "57021679437", "hsId": "57021679437",
@@ -128,7 +137,8 @@
       "contacts": [],
       "nda":"Not sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Research complete — trigger qualifying", "action2":"Book discovery call",
-      "persona":"Partner Media", "vend": false, "activity":"Mar 13", "hasResearch": true
+      "persona":"Partner Media", "vend": false, "activity":"Mar 13", "hasResearch": true,
+      "meddicNotes": { "Metrics":"$3M SEM/Social/Programmatic — early-stage revenue modelling","EconBuyer":"SVP Digital partially identified — needs direct engagement","Criteria":"","Process":"","Pain":"Legacy ad ops infrastructure limiting programmatic scale","Champion":"" }
     },
     {
       "id": "51514487925", "hsId": "51514487925",
@@ -141,7 +151,8 @@
       "contacts": [],
       "nda":"Not sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Status check — no recent activity", "action2":"Re-engage",
-      "persona":"Partner Media", "vend": false, "activity":"Mar 9", "hasResearch": true
+      "persona":"Partner Media", "vend": false, "activity":"Mar 9", "hasResearch": true,
+      "meddicNotes": { "Metrics":"$2M partnership — community newspaper digital transformation","EconBuyer":"VP Digital partially engaged — budget holder unclear","Criteria":"","Process":"","Pain":"Print ad revenue declining, need digital monetisation path","Champion":"" }
     },
     {
       "id": "54421042465", "hsId": "54421042465",
@@ -154,7 +165,8 @@
       "contacts": [],
       "nda":"Not sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"ESCALATE — $1M closes Mar 31", "action2":"Still at Lead stage",
-      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 12", "hasResearch": true
+      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 12", "hasResearch": true,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"Retail marketing fragmented across too many agencies","Champion":"" }
     },
     {
       "id": "43530754946", "hsId": "43530754946",
@@ -167,7 +179,8 @@
       "contacts": [],
       "nda":"Not sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"10+ days stale — re-engage", "action2":"Research pass needed",
-      "persona":"Partner Agency", "vend": false, "activity":"Mar 11", "hasResearch": false
+      "persona":"Partner Agency", "vend": false, "activity":"Mar 11", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     },
     {
       "id": "47172269449", "hsId": "47172269449",
@@ -180,7 +193,8 @@
       "contacts": [],
       "nda":"Not sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Stalled — re-engage before Apr 15", "action2":"Research needed",
-      "persona":"Partner Media", "vend": false, "activity":"Mar 11", "hasResearch": false
+      "persona":"Partner Media", "vend": false, "activity":"Mar 11", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     },
     {
       "id": "49416138868", "hsId": "49416138868",
@@ -193,7 +207,8 @@
       "contacts": [],
       "nda":"Signed", "msa":"Out", "sow":"Out", "credit":"Sent", "bizdev":"In progress", "partner":"Not started",
       "action1":"Advance to close — Apr 30", "action2":"Confirm final terms",
-      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 15", "hasResearch": true
+      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 15", "hasResearch": true,
+      "meddicNotes": { "Metrics":"$1.5M enterprise deal — ROI model based on brand awareness KPIs","EconBuyer":"Regional marketing director confirmed budget authority","Criteria":"Global brand compliance + local market targeting required","Process":"MSA under legal review — SOW pending final scope","Pain":"Inconsistent digital presence across EMEA markets","Champion":"Local agency champion fully engaged and advocating" }
     },
     {
       "id": "56706533157", "hsId": "56706533157",
@@ -206,7 +221,8 @@
       "contacts": [],
       "nda":"Signed", "msa":"Out", "sow":"Out", "credit":"Sent", "bizdev":"In progress", "partner":"Not started",
       "action1":"Close by Mar 31", "action2":"Confirm sign-off",
-      "persona":"Partner Agency", "vend": false, "activity":"Mar 12", "hasResearch": false
+      "persona":"Partner Agency", "vend": false, "activity":"Mar 12", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     },
     {
       "id": "49446052198", "hsId": "49446052198",
@@ -219,7 +235,8 @@
       "contacts": [],
       "nda":"Signed", "msa":"Out", "sow":"Out", "credit":"Sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Follow up on docs", "action2":"Confirm go-live date",
-      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 15", "hasResearch": false
+      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 15", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     },
     {
       "id": "52036400490", "hsId": "52036400490",
@@ -232,7 +249,8 @@
       "contacts": [],
       "nda":"Sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Follow up — closes Mar 27", "action2":"Confirm proposal received",
-      "persona":"Partner Media", "vend": false, "activity":"Mar 13", "hasResearch": false
+      "persona":"Partner Media", "vend": false, "activity":"Mar 13", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     },
     {
       "id": "51633489492", "hsId": "51633489492",
@@ -245,7 +263,8 @@
       "contacts": [],
       "nda":"Sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Follow up on proposal", "action2":"Book review call",
-      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 10", "hasResearch": false
+      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 10", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     },
     {
       "id": "57030474361", "hsId": "57030474361",
@@ -258,7 +277,8 @@
       "contacts": [],
       "nda":"Sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Advance to negotiation", "action2":"Confirm budget",
-      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 13", "hasResearch": false
+      "persona":"Enterprise Brand", "vend": false, "activity":"Mar 13", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     },
     {
       "id": "57093640104", "hsId": "57093640104",
@@ -271,7 +291,8 @@
       "contacts": [],
       "nda":"Signed", "msa":"Out", "sow":"Out", "credit":"Sent", "bizdev":"In progress", "partner":"Not started",
       "action1":"First Alex deal — close tomorrow", "action2":"Confirm all docs signed",
-      "persona":"Partner Agency", "vend": false, "activity":"Mar 14", "hasResearch": false
+      "persona":"Partner Agency", "vend": false, "activity":"Mar 14", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     },
     {
       "id": "54263812884", "hsId": "54263812884",
@@ -284,7 +305,8 @@
       "contacts": [],
       "nda":"Sent", "msa":"Not sent", "sow":"Not sent", "credit":"Not sent", "bizdev":"Not started", "partner":"Not started",
       "action1":"Follow up on proposal", "action2":"Book review call",
-      "persona":"Partner Agency", "vend": false, "activity":"Mar 12", "hasResearch": false
+      "persona":"Partner Agency", "vend": false, "activity":"Mar 12", "hasResearch": false,
+      "meddicNotes": { "Metrics":"","EconBuyer":"","Criteria":"","Process":"","Pain":"","Champion":"" }
     }
   ],
   "meta": {

@@ -1,4 +1,4 @@
-import type { ParsedDeal } from "./hubspot";
+import type { ParsedDeal, MeddicNotes } from "./hubspot";
 import mockData from "./mockDeals.json";
 
 // Map JSON MEDDIC keys → ParsedDeal MeddicScore keys
@@ -76,6 +76,7 @@ interface RawDeal {
   activity: string;
   hasResearch: boolean;
   domain: string | null;
+  meddicNotes: Record<string, string>;
 }
 
 export const MOCK_DEALS: ParsedDeal[] = (mockData.deals as RawDeal[]).map((d) => ({
@@ -103,6 +104,14 @@ export const MOCK_DEALS: ParsedDeal[] = (mockData.deals as RawDeal[]).map((d) =>
   partner: d.partner,
   hasResearch: d.hasResearch,
   researchNotes: "",
+  meddicNotes: {
+    metrics: d.meddicNotes?.Metrics || "",
+    econBuyer: d.meddicNotes?.EconBuyer || "",
+    decisionCriteria: d.meddicNotes?.Criteria || "",
+    decisionProcess: d.meddicNotes?.Process || "",
+    identifyPain: d.meddicNotes?.Pain || "",
+    champion: d.meddicNotes?.Champion || "",
+  } as MeddicNotes,
   action1: d.action1,
   action2: d.action2,
   description: "",

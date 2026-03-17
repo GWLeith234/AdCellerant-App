@@ -40,6 +40,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-001",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-002",
@@ -79,6 +80,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-002",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-003",
@@ -119,6 +121,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-003",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-004",
@@ -158,6 +161,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-004",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-005",
@@ -197,6 +201,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-005",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-006",
@@ -236,6 +241,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-006",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-007",
@@ -276,6 +282,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-007",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-008",
@@ -315,6 +322,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-008",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-009",
@@ -354,6 +362,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-009",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
   {
     id: "mock-010",
@@ -394,5 +403,6 @@ export const MOCK_DEALS: ParsedDeal[] = [
     hsId: "mock-010",
     description: "",
     domain: null,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
   },
 ];

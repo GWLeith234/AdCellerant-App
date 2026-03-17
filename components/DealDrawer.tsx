@@ -576,7 +576,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
             {/* Section 4: MEDDIC */}
             <div ref={meddicRef} />
             <DrawerSection title="MEDDIC" icon={IconMeddic}>
-              <MeddicGrid meddic={deal.meddic} />
+              <MeddicGrid meddic={deal.meddic} meddicNotes={deal.meddicNotes} />
             </DrawerSection>
 
             {/* Section 5: Contacts */}

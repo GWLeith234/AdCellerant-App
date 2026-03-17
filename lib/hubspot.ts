@@ -61,6 +61,8 @@ export interface MeddicScore {
   champion: string;
 }
 
+export type MeddicNotes = Record<keyof MeddicScore, string>;
+
 export interface ParsedDeal {
   id: string;
   name: string;
@@ -85,6 +87,7 @@ export interface ParsedDeal {
   partner: string;
   hasResearch: boolean;
   researchNotes: string;
+  meddicNotes: MeddicNotes;
   action1: string;
   action2: string;
   hsId: string;
@@ -343,6 +346,7 @@ export function parseDealFromHubSpot(deal: {
     ...docs,
     hasResearch,
     researchNotes,
+    meddicNotes: { metrics: "", econBuyer: "", decisionCriteria: "", decisionProcess: "", identifyPain: "", champion: "" },
     action1,
     action2,
     hsId: deal.id,
