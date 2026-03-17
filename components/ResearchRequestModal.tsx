@@ -13,10 +13,14 @@ export default function ResearchRequestModal({ deal, onClose }: ResearchRequestM
 
   const triggerText = `New Lead — ${deal.name}${deal.persona ? `, ${deal.persona}` : ""}`;
 
+  const [showToast, setShowToast] = useState(false);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(triggerText);
     setCopied(true);
+    setShowToast(true);
     setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setShowToast(false), 3000);
   };
 
   return (
@@ -64,6 +68,22 @@ export default function ResearchRequestModal({ deal, onClose }: ResearchRequestM
           </div>
         </div>
       </div>
+      {/* Toast — fixed bottom center */}
+      {showToast && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 text-white text-center whitespace-nowrap"
+          style={{
+            background: "#2ECC8A",
+            padding: "10px 20px",
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            zIndex: 999,
+          }}
+        >
+          ✅ Trigger copied — paste it into Claude
+        </div>
+      )}
     </>
   );
 }

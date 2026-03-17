@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     const message = await getClient().messages.create({
-      model: "claude-sonnet-4-5-20250514",
+      model: "claude-sonnet-4-5",
       max_tokens: 1000,
       messages: [
         {

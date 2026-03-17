@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       .join(", ") || "No contacts listed";
 
     const message = await getClient().messages.create({
-      model: "claude-sonnet-4-5-20250514",
+      model: "claude-sonnet-4-5",
       max_tokens: 1000,
       system: `You are George Leith, President, International at AdCellerant. You write emails that are:
 - Direct and warm — no corporate filler
