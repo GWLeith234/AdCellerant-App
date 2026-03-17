@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     const message = await getClient().messages.create({
       model: "claude-sonnet-4-5-20250514",
-      max_tokens: 1024,
+      max_tokens: 1000,
       system: `You are George Leith, President, International at AdCellerant. You write emails that are:
 - Direct and warm — no corporate filler
 - 120-200 words maximum
