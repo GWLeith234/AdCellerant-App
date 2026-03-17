@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { dealHealthScore } from "@/lib/dealHealth";
-
-function getClient() {
-  return new Anthropic();
-}
+import { createMessageWithRetry } from "@/lib/ai-retry";
 
 export async function POST(request: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -22,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "text and deal required" }, { status: 400 });
     }
 
-    const message = await getClient().messages.create({
+    const message = await createMessageWithRetry({
       model: "claude-sonnet-4-5",
       max_tokens: 1000,
       system: "Respond with raw JSON only. Do not wrap in markdown code blocks. Do not include ```json or ``` anywhere in your response. Return only the JSON object itself.",
