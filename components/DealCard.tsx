@@ -9,213 +9,447 @@ interface DealCardProps {
   onResearchClick?: (deal: ParsedDeal) => void;
 }
 
-// --- Close date helpers ---
+// --- Helpers ---
 
 function daysUntilClose(closeDate: string): number {
   if (!closeDate) return Infinity;
   const close = new Date(closeDate).getTime();
-  const now = Date.now();
-  return Math.ceil((close - now) / (1000 * 60 * 60 * 24));
+  return Math.ceil((close - Date.now()) / (1000 * 60 * 60 * 24));
 }
-
-function closeDateColor(closeDate: string): string {
-  const days = daysUntilClose(closeDate);
-  if (days <= 1) return "text-orange";
-  if (days <= 7) return "text-amber";
-  if (days === Infinity) return "text-muted";
-  return "text-muted";
-}
-
-function closeDateColorClosed(cat: string, closeDate: string): string {
-  if (cat === "cw") return "text-green";
-  return closeDateColor(closeDate);
-}
-
-// --- Stage age badge ---
-
-function stageAgeBadge(days: number): { text: string; cls: string } {
-  if (days <= 6) return { text: `${days}d`, cls: "bg-green/20 text-green" };
-  if (days <= 13) return { text: `${days}d`, cls: "bg-amber/20 text-amber" };
-  return { text: `${days}d`, cls: "bg-orange/20 text-orange" };
-}
-
-// --- MEDDIC ---
 
 function meddicDotColor(val: string): string {
   const v = val.toLowerCase();
-  if (v === "ok" || v === "yes" || v === "done" || v === "complete") return "bg-green";
-  if (v === "partial" || v === "wip" || v === "started" || v === "in progress") return "bg-amber";
-  if (v && v !== "" && v !== "gap" && v !== "no" && v !== "missing") return "bg-amber";
-  return "bg-orange";
+  if (v === "ok" || v === "yes" || v === "done" || v === "complete") return "#2ECC8A";
+  if (v === "partial" || v === "wip" || v === "started" || v === "in progress") return "#F5A623";
+  if (v && v !== "" && v !== "gap" && v !== "no" && v !== "missing") return "#F5A623";
+  return "#FF4A2D";
 }
 
-function meddicDotTitle(key: string, val: string): string {
-  const labels: Record<string, string> = {
-    metrics: "Metrics",
-    econBuyer: "Econ Buyer",
-    decisionCriteria: "Decision Criteria",
-    decisionProcess: "Decision Process",
-    identifyPain: "Identify Pain",
-    champion: "Champion",
-  };
-  return `${labels[key] || key}: ${val || "gap"}`;
+// Left border strip colour
+function leftStripColor(deal: ParsedDeal): string {
+  const days = daysUntilClose(deal.closeDate);
+  const isUrgent = days <= 2 && deal.cat !== "cw";
+  if (isUrgent) return "#FF4A2D";
+  if (deal.val >= 250_000) return "#F5A623";
+  if (deal.cat === "neg") return "#4FA3D1";
+  if (deal.cat === "prop") return "#6B7F96";
+  return "#2A3F5C";
 }
 
-function meddicPercentage(meddic: MeddicScore): number {
-  const fields = Object.values(meddic);
-  if (fields.every((v) => !v)) return 0;
-  const ok = fields.filter((v) => {
-    const lv = v.toLowerCase();
-    return lv === "ok" || lv === "yes" || lv === "done" || lv === "complete";
-  }).length;
-  return Math.round((ok / 6) * 100);
+// Stage pill style
+function stagePillStyle(stage: string): { bg: string; border: string; text: string } {
+  const s = stage.toLowerCase();
+  if (s.includes("negotiation"))
+    return { bg: "rgba(255,74,45,0.15)", border: "rgba(255,74,45,0.4)", text: "#FF6B4A" };
+  if (s.includes("proposal"))
+    return { bg: "rgba(79,163,209,0.2)", border: "rgba(79,163,209,0.4)", text: "#4FA3D1" };
+  if (s.includes("closed won"))
+    return { bg: "rgba(46,204,138,0.2)", border: "rgba(46,204,138,0.4)", text: "#2ECC8A" };
+  // Needs Analysis, Qualification, etc.
+  return { bg: "rgba(107,127,150,0.15)", border: "rgba(107,127,150,0.3)", text: "#6B7F96" };
 }
 
-// --- Left border ---
+// Age badge RAG colour
+function ageColor(days: number): string {
+  if (days <= 6) return "#2ECC8A";
+  if (days <= 13) return "#F5A623";
+  return "#FF4A2D";
+}
 
-function leftBorderColor(deal: ParsedDeal): string {
-  const daysToClose = daysUntilClose(deal.closeDate);
-  if (daysToClose <= 2 && deal.cat !== "cw") return "border-l-orange";
-  if (deal.val >= 250_000) return "border-l-amber";
-  if (deal.stageAge >= 14) return "border-l-muted";
-  return "border-l-transparent";
+// Deal value colour
+function valueColor(deal: ParsedDeal): string {
+  const days = daysUntilClose(deal.closeDate);
+  const isUrgent = days <= 2 && deal.cat !== "cw";
+  if (isUrgent || deal.cat === "neg") return "#FF4A2D";
+  if (deal.val >= 250_000) return "#F5A623";
+  return "#F0F4F8";
+}
+
+// Close date colour
+function closeDateColor(deal: ParsedDeal): string {
+  const days = daysUntilClose(deal.closeDate);
+  if (days <= 1) return "#FF4A2D";
+  return "#6B7F96";
+}
+
+function closeDateWeight(deal: ParsedDeal): number {
+  const days = daysUntilClose(deal.closeDate);
+  return days <= 1 ? 600 : 400;
+}
+
+// Persona pill style
+function personaPillStyle(persona: string): { bg: string; text: string } {
+  const p = persona.toLowerCase();
+  if (p.includes("agency"))
+    return { bg: "rgba(79,163,209,0.1)", text: "#4FA3D1" };
+  if (p.includes("media"))
+    return { bg: "rgba(46,204,138,0.1)", text: "#2ECC8A" };
+  if (p.includes("enterprise"))
+    return { bg: "rgba(167,139,250,0.1)", text: "#A78BFA" };
+  if (p.includes("vendasta"))
+    return { bg: "rgba(46,204,138,0.1)", text: "#2ECC8A" };
+  return { bg: "rgba(107,127,150,0.1)", text: "#6B7F96" };
 }
 
 export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: DealCardProps) {
-  const daysToClose = daysUntilClose(deal.closeDate);
-  const isUrgent = daysToClose <= 2 && deal.cat !== "cw";
+  const days = daysUntilClose(deal.closeDate);
+  const isUrgent = days <= 2 && deal.cat !== "cw";
   const isWhale = deal.val >= 250_000;
-  const isVendasta = deal.rep === "vendasta";
-  const age = stageAgeBadge(deal.stageAge);
-  const meddicPct = meddicPercentage(deal.meddic);
+  const isVendasta = deal.rep === "vendasta" || (deal.persona || "").toLowerCase().includes("vendasta");
   const meddicFields = Object.entries(deal.meddic) as [keyof MeddicScore, string][];
+  const pill = stagePillStyle(deal.stage);
 
   return (
     <div
       onClick={onClick}
-      className={`bg-card border border-border rounded-lg cursor-pointer
-        transition-all duration-150 hover:-translate-y-0.5 hover:border-blue/50 hover:shadow-[0_0_12px_rgba(79,163,209,0.15)]
-        flex flex-col border-l-[3px] ${leftBorderColor(deal)}`}
+      style={{
+        height: 148,
+        borderRadius: 10,
+        background: "#1C2F4A",
+        border: "0.5px solid #2A3F5C",
+        position: "relative",
+        overflow: "hidden",
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        transition: "all 150ms ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "#4FA3D1";
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "#2A3F5C";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
     >
-      <div className="p-3.5 flex flex-col gap-2 flex-1">
-        {/* Row 1: Name + Value */}
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-white font-semibold text-sm leading-tight truncate flex-1">
-            {deal.name}
-          </p>
-          <p className="text-orange font-bold text-sm whitespace-nowrap">
-            {deal.valShort}
-          </p>
-        </div>
+      {/* Left border strip */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          background: leftStripColor(deal),
+          borderRadius: "2px 0 0 2px",
+        }}
+      />
 
-        {/* Row 2: Sub-line */}
-        {deal.sub && (
-          <p className="text-muted text-[11px] truncate -mt-1">{deal.sub}</p>
+      {/* ZONE A — Top row */}
+      <div style={{ padding: "8px 8px 0 12px", display: "flex", gap: 12, flex: 1, minHeight: 0 }}>
+        {/* Company logo */}
+        {deal.domain ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={`https://logo.clearbit.com/${deal.domain}`}
+            alt=""
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 6,
+              objectFit: "contain",
+              background: "#ffffff",
+              padding: 3,
+              display: "block",
+              flexShrink: 0,
+            }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 6,
+              background: "#0D1B2E",
+              border: "0.5px solid #2A3F5C",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              color: "#6B7F96",
+              fontSize: 16,
+              fontWeight: 600,
+            }}
+          >
+            {deal.name.charAt(0)}
+          </div>
         )}
 
-        {/* Row 3: Close date + stage age badge */}
-        <div className="flex items-center gap-2">
+        {/* Stage info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Line 1: Stage pill + age badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span
+              style={{
+                height: 18,
+                borderRadius: 9,
+                padding: "0 8px",
+                fontSize: 10,
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                background: pill.bg,
+                border: `0.5px solid ${pill.border}`,
+                color: pill.text,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {deal.stage}
+            </span>
+            {deal.stageAge > 0 && (
+              <span
+                style={{
+                  background: "#0D1B2E",
+                  border: "0.5px solid #2A3F5C",
+                  borderRadius: 9,
+                  padding: "0 6px",
+                  fontSize: 10,
+                  color: ageColor(deal.stageAge),
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: 18,
+                  fontWeight: 500,
+                }}
+              >
+                {deal.stageAge}d
+              </span>
+            )}
+          </div>
+
+          {/* Line 2: Deal name */}
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#F0F4F8",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              marginTop: 6,
+              lineHeight: 1.2,
+            }}
+          >
+            {deal.name}
+          </p>
+
+          {/* Line 3: Sub-line */}
+          {deal.sub && (
+            <p
+              style={{
+                fontSize: 10,
+                color: "#6B7F96",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                marginTop: 4,
+                lineHeight: 1.2,
+              }}
+            >
+              {deal.sub}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ZONE B — Bottom row */}
+      <div
+        style={{
+          padding: "0 8px 10px 12px",
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Left: value + close date */}
+        <div>
+          <p
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: valueColor(deal),
+              lineHeight: 1,
+            }}
+          >
+            {deal.valShort}
+          </p>
           {deal.closeDate && (
-            <span className={`text-[11px] ${closeDateColorClosed(deal.cat, deal.closeDate)}`}>
+            <p
+              style={{
+                fontSize: 10,
+                color: closeDateColor(deal),
+                fontWeight: closeDateWeight(deal),
+                marginTop: 4,
+              }}
+            >
               {new Date(deal.closeDate).toLocaleDateString("en-GB", {
                 day: "numeric",
                 month: "short",
               })}
-            </span>
-          )}
-          {deal.stageAge > 0 && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${age.cls}`}>
-              {age.text}
-            </span>
+              {days <= 1 && deal.cat !== "cw" ? " — TODAY" : ""}
+            </p>
           )}
         </div>
 
-        {/* Row 4: Persona + Rep */}
-        <div className="flex items-center gap-2">
-          {deal.persona && (
-            <span className="text-blue text-[11px] truncate">{deal.persona}</span>
-          )}
-          <span className="text-muted text-[11px] capitalize ml-auto whitespace-nowrap">
-            {deal.rep}
-          </span>
-        </div>
+        {/* Right: MEDDIC dots + pills + AI button */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+          {/* MEDDIC dots */}
+          <div style={{ display: "flex", gap: 4 }}>
+            {meddicFields.map(([key, val]) => (
+              <span
+                key={key}
+                title={`${key}: ${val || "gap"}`}
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: val ? meddicDotColor(val) : "#2A3F5C",
+                  display: "block",
+                }}
+              />
+            ))}
+          </div>
 
-        {/* Row 5: MEDDIC dots + percentage */}
-        <div className="flex items-center gap-1">
-          {meddicFields.map(([key, val]) => (
-            <span
-              key={key}
-              title={meddicDotTitle(key, val)}
-              className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                val ? meddicDotColor(val) : "bg-border"
-              }`}
-            />
-          ))}
-          <span
-            className={`text-[10px] font-medium ml-auto whitespace-nowrap ${
-              meddicPct >= 100
-                ? "text-green"
-                : meddicPct >= 50
-                ? "text-amber"
-                : meddicPct > 0
-                ? "text-orange"
-                : "text-muted"
-            }`}
-          >
-            {meddicPct > 0 ? `${meddicPct}%` : ""}
-          </span>
-        </div>
+          {/* Pills + AI button */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            {/* Persona pill */}
+            {deal.persona && (() => {
+              const ps = personaPillStyle(deal.persona);
+              return (
+                <span
+                  style={{
+                    fontSize: 9,
+                    height: 16,
+                    borderRadius: 8,
+                    padding: "0 6px",
+                    background: ps.bg,
+                    color: ps.text,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {deal.persona}
+                </span>
+              );
+            })()}
 
-        {/* Row 6: Pills */}
-        {(isUrgent || isWhale || isVendasta) && (
-          <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Urgent pill */}
             {isUrgent && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange/20 text-orange font-medium whitespace-nowrap">
+              <span
+                style={{
+                  fontSize: 9,
+                  height: 16,
+                  borderRadius: 8,
+                  padding: "0 6px",
+                  background: "rgba(255,74,45,0.15)",
+                  border: "0.5px solid rgba(255,74,45,0.4)",
+                  color: "#FF4A2D",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 Urgent
               </span>
             )}
+
+            {/* Whale pill */}
             {isWhale && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber/20 text-amber font-medium whitespace-nowrap">
+              <span
+                style={{
+                  fontSize: 9,
+                  height: 16,
+                  borderRadius: 8,
+                  padding: "0 6px",
+                  background: "rgba(245,166,35,0.15)",
+                  border: "0.5px solid rgba(245,166,35,0.4)",
+                  color: "#F5A623",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 Whale
               </span>
             )}
+
+            {/* Vendasta pill */}
             {isVendasta && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-green/20 text-green font-medium whitespace-nowrap">
+              <span
+                style={{
+                  fontSize: 9,
+                  height: 16,
+                  borderRadius: 8,
+                  padding: "0 6px",
+                  background: "rgba(46,204,138,0.1)",
+                  color: "#2ECC8A",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 Vendasta
               </span>
             )}
-          </div>
-        )}
-      </div>
 
-      {/* Bottom row: drill text + AI/research button */}
-      <div className="border-t border-border px-3.5 py-2 flex items-center justify-between gap-2">
-        <p className="text-muted text-[10px] truncate flex-1">
-          {deal.action1}
-        </p>
-        {deal.hasResearch ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAIClick?.(deal);
-            }}
-            className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center bg-[#7C3AED]/20 hover:bg-[#7C3AED]/30 transition-colors"
-            title="AI Research Available"
-          >
-            <span className="text-[#7C3AED] text-sm leading-none">&#10022;</span>
-          </button>
-        ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onResearchClick?.(deal);
-            }}
-            className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber/20 text-amber hover:bg-amber/30 transition-colors whitespace-nowrap"
-            title="Research needed"
-          >
-            Research
-          </button>
-        )}
+            {/* AI button */}
+            {deal.hasResearch ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAIClick?.(deal);
+                }}
+                style={{
+                  width: 28,
+                  height: 22,
+                  borderRadius: 6,
+                  background: "rgba(167,139,250,0.2)",
+                  border: "0.5px solid rgba(167,139,250,0.4)",
+                  color: "#A78BFA",
+                  fontSize: 14,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  marginLeft: 2,
+                }}
+                title="AI Research Available"
+              >
+                &#10022;
+              </button>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onResearchClick?.(deal);
+                }}
+                style={{
+                  width: 28,
+                  height: 22,
+                  borderRadius: 6,
+                  background: "rgba(245,166,35,0.1)",
+                  border: "0.5px solid rgba(245,166,35,0.3)",
+                  color: "#F5A623",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  marginLeft: 2,
+                }}
+                title="Research needed"
+              >
+                ⚠
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

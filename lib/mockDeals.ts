@@ -75,6 +75,7 @@ interface RawDeal {
   vend: boolean;
   activity: string;
   hasResearch: boolean;
+  domain: string | null;
 }
 
 export const MOCK_DEALS: ParsedDeal[] = (mockData.deals as RawDeal[]).map((d) => ({
@@ -105,6 +106,7 @@ export const MOCK_DEALS: ParsedDeal[] = (mockData.deals as RawDeal[]).map((d) =>
   action1: d.action1,
   action2: d.action2,
   description: "",
+  domain: d.domain || null,
 }));
 
 // Quick lookup by HubSpot ID

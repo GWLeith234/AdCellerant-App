@@ -89,6 +89,7 @@ export interface ParsedDeal {
   action2: string;
   hsId: string;
   description: string;
+  domain: string | null;
 }
 
 function formatValShort(val: number): string {
@@ -346,6 +347,7 @@ export function parseDealFromHubSpot(deal: {
     action2,
     hsId: deal.id,
     description,
+    domain: null,
   };
 }
 

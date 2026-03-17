@@ -39,6 +39,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Negotiate Terms",
     hsId: "mock-001",
     description: "",
+    domain: null,
   },
   {
     id: "mock-002",
@@ -77,6 +78,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Confirm Decision Maker",
     hsId: "mock-002",
     description: "",
+    domain: null,
   },
   {
     id: "mock-003",
@@ -116,6 +118,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Get Signature",
     hsId: "mock-003",
     description: "",
+    domain: null,
   },
   {
     id: "mock-004",
@@ -154,6 +157,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Prepare Proposal",
     hsId: "mock-004",
     description: "",
+    domain: null,
   },
   {
     id: "mock-005",
@@ -192,6 +196,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Book Presentation",
     hsId: "mock-005",
     description: "",
+    domain: null,
   },
   {
     id: "mock-006",
@@ -230,6 +235,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Schedule Discovery",
     hsId: "mock-006",
     description: "",
+    domain: null,
   },
   {
     id: "mock-007",
@@ -269,6 +275,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Book Presentation",
     hsId: "mock-007",
     description: "",
+    domain: null,
   },
   {
     id: "mock-008",
@@ -307,6 +314,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Close Deal",
     hsId: "mock-008",
     description: "",
+    domain: null,
   },
   {
     id: "mock-009",
@@ -345,6 +353,7 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Confirm Decision Maker",
     hsId: "mock-009",
     description: "",
+    domain: null,
   },
   {
     id: "mock-010",
@@ -384,5 +393,6 @@ export const MOCK_DEALS: ParsedDeal[] = [
     action2: "Confirm Decision Maker",
     hsId: "mock-010",
     description: "",
+    domain: null,
   },
 ];
