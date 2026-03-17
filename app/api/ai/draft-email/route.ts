@@ -56,7 +56,8 @@ export async function POST(request: Request) {
 - Use short paragraphs (1-3 sentences each)
 - Never use phrases like "I hope this finds you well" or "Just circling back"
 - Sound human, not templated
-- Reference specific deal context naturally`,
+- Reference specific deal context naturally
+Respond with raw JSON only. Do not wrap in markdown code blocks. Do not include \`\`\`json or \`\`\` anywhere in your response. Return only the JSON object itself.`,
       messages: [
         {
           role: "user",
@@ -91,8 +92,24 @@ Return ONLY valid JSON, no markdown fences.`,
       return NextResponse.json({ error: "Unexpected response" }, { status: 500 });
     }
 
-    const parsed = JSON.parse(content.text);
-    return NextResponse.json(parsed);
+    const raw = content.text;
+    const cleaned = raw
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+
+    try {
+      const parsed = JSON.parse(cleaned);
+      return NextResponse.json(parsed);
+    } catch (parseErr) {
+      console.error("Email parse error:", parseErr);
+      console.error("Raw response was:", raw.substring(0, 200));
+      return NextResponse.json({
+        error: "Failed to parse AI response",
+        raw: raw.substring(0, 500),
+      }, { status: 500 });
+    }
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Email generation error";
     return NextResponse.json({ error: msg }, { status: 500 });
