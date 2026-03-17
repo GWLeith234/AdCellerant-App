@@ -384,7 +384,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
         <button
           aria-label="Close"
           onClick={onClose}
-          className="absolute top-[96px] sm:top-4 right-4 z-[110] min-w-[44px] min-h-[44px] w-11 h-11 sm:w-8 sm:h-8 rounded-lg bg-navy/50 hover:bg-navy flex items-center justify-center text-muted hover:text-white transition-colors"
+          className="fixed top-[96px] sm:top-4 right-4 z-[150] min-w-[44px] min-h-[44px] w-11 h-11 sm:w-8 sm:h-8 rounded-lg bg-navy/50 hover:bg-navy flex items-center justify-center text-muted hover:text-white transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
