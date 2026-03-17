@@ -3,19 +3,24 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import type { ParsedDeal } from "@/lib/hubspot";
 
-interface ResearchSection {
-  title: string;
-  items: string[];
-}
-
 interface ResearchData {
-  sections: ResearchSection[];
+  sections: Record<string, string>;
+  rawText?: string;
 }
 
 interface ResearchPanelProps {
   deal: ParsedDeal;
   onClose: () => void;
 }
+
+const SECTION_ORDER = [
+  "ACCOUNT INTELLIGENCE",
+  "STAKEHOLDER READ",
+  "MEDDIC ANALYSIS",
+  "STAGE RISK ASSESSMENT",
+  "RECOMMENDED NEXT MOVE",
+  "OPEN QUESTIONS",
+];
 
 // Session cache: keyed by deal id
 const sessionCache = new Map<string, ResearchData>();
@@ -134,26 +139,32 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
           )}
 
           {/* Research sections */}
-          {data && (
+          {data && data.sections && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {data.sections.map((section, i) => (
-                <div
-                  key={i}
-                  className="bg-navy/30 rounded-xl border border-border overflow-hidden"
-                >
-                  <div className="bg-[#7C3AED]/10 px-4 py-2.5 border-b border-[#7C3AED]/20">
-                    <h3 className="text-[#7C3AED] text-sm font-semibold">{section.title}</h3>
+              {SECTION_ORDER.map((header) => {
+                const content = data.sections[header];
+                if (!content) return null;
+                return (
+                  <div
+                    key={header}
+                    className="bg-navy/30 rounded-xl border border-border overflow-hidden"
+                  >
+                    <div className="bg-[#7C3AED]/10 px-4 py-2.5 border-b border-[#7C3AED]/20">
+                      <h3
+                        className="text-[#7C3AED] text-xs font-semibold tracking-wider"
+                        style={{ fontFamily: "var(--font-orbitron, monospace)", textTransform: "uppercase" }}
+                      >
+                        {header}
+                      </h3>
+                    </div>
+                    <div className="px-4 py-3">
+                      <p className="text-slate text-[13px] leading-[1.6] whitespace-pre-wrap">
+                        {content}
+                      </p>
+                    </div>
                   </div>
-                  <ul className="px-4 py-3 space-y-2">
-                    {section.items.map((item, j) => (
-                      <li key={j} className="flex gap-2 text-xs">
-                        <span className="text-[#7C3AED] mt-0.5 flex-shrink-0">&#8226;</span>
-                        <span className="text-slate">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

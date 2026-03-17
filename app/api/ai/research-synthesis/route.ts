@@ -5,6 +5,15 @@ function getClient() {
   return new Anthropic();
 }
 
+const SECTION_HEADERS = [
+  "ACCOUNT INTELLIGENCE",
+  "STAKEHOLDER READ",
+  "MEDDIC ANALYSIS",
+  "STAGE RISK ASSESSMENT",
+  "RECOMMENDED NEXT MOVE",
+  "OPEN QUESTIONS",
+];
+
 export async function POST(request: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({
@@ -16,6 +25,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { deal } = body;
+
+    console.log("=== RESEARCH API CALLED ===");
+    console.log("Deal:", JSON.stringify(body).substring(0, 200));
 
     if (!deal) {
       return NextResponse.json({ error: "deal required" }, { status: 400 });
@@ -38,8 +50,28 @@ export async function POST(request: Request) {
 
     const message = await getClient().messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 1000,
-      system: `You are a senior sales intelligence analyst. You MUST respond with a valid JSON object only. Do NOT use markdown formatting. Do NOT wrap in code blocks. Do NOT include any text before or after the JSON. Start your response with { and end with }. Be specific, actionable, and direct. Reference actual data from the deal context.`,
+      max_tokens: 1500,
+      system: `You are an elite sales intelligence analyst. Return your analysis as plain text with these exact section headers on their own lines:
+
+ACCOUNT INTELLIGENCE
+[content]
+
+STAKEHOLDER READ
+[content]
+
+MEDDIC ANALYSIS
+[content]
+
+STAGE RISK ASSESSMENT
+[content]
+
+RECOMMENDED NEXT MOVE
+[content]
+
+OPEN QUESTIONS
+[content]
+
+Be specific, actionable, and concise. 3-5 sentences per section. Reference the deal data provided. Do NOT use JSON. Do NOT use markdown formatting or code blocks.`,
       messages: [
         {
           role: "user",
@@ -64,79 +96,59 @@ ${deal.researchNotes || "No research notes on file."}
 Full description field:
 ${deal.description || "No description."}
 
-Return a JSON object with this exact structure:
-{
-  "sections": [
-    {
-      "title": "Account Intelligence",
-      "items": ["bullet point 1", "bullet point 2", ...]
-    },
-    {
-      "title": "Stakeholder Read",
-      "items": ["bullet point 1", ...]
-    },
-    {
-      "title": "MEDDIC Analysis",
-      "items": ["bullet point 1", ...]
-    },
-    {
-      "title": "Stage Risk",
-      "items": ["bullet point 1", ...]
-    },
-    {
-      "title": "Recommended Next Move",
-      "items": ["bullet point 1", ...]
-    },
-    {
-      "title": "Open Questions",
-      "items": ["bullet point 1", ...]
-    }
-  ]
-}
-
-Return ONLY valid JSON, no markdown fences.`,
+Write the brief now using the exact section headers specified.`,
         },
       ],
+    });
+
+    // Extract text content
+    console.log("=== RAW RESPONSE ===");
+    console.log("Content blocks:", message.content?.length);
+    message.content?.forEach((b, i) => {
+      console.log(`Block ${i}: type=${b.type}`);
+      if (b.type === "text") {
+        console.log("Text preview:", b.text?.substring(0, 300));
+      }
     });
 
     const textBlock = message.content?.find(
       (b: { type: string }) => b.type === "text"
     );
-    const rawText = textBlock && "text" in textBlock ? textBlock.text : "";
 
-    console.log("Raw AI response:", JSON.stringify(message.content, null, 2));
-
-    if (!rawText) {
-      return NextResponse.json({ error: "Empty AI response" }, { status: 500 });
-    }
-
-    // Strip markdown code fences if present
-    let cleaned = rawText.trim();
-    // Remove opening ```json or ``` (possibly with leading whitespace/newlines)
-    cleaned = cleaned.replace(/^\s*```(?:json)?\s*\n?/i, "");
-    // Remove closing ```
-    cleaned = cleaned.replace(/\n?\s*```\s*$/g, "");
-    cleaned = cleaned.trim();
-
-    if (!cleaned.startsWith("{") && !cleaned.startsWith("[")) {
-      console.error("Response is not JSON:", cleaned.substring(0, 200));
+    if (!textBlock || textBlock.type !== "text" || !textBlock.text) {
+      console.error("No text block in response:", JSON.stringify(message.content).substring(0, 500));
       return NextResponse.json({
-        error: "AI returned non-JSON response",
-        preview: cleaned.substring(0, 200),
+        error: "No text content in AI response",
       }, { status: 500 });
     }
 
-    try {
-      const parsed = JSON.parse(cleaned);
-      return NextResponse.json(parsed);
-    } catch (parseErr) {
-      console.error("Research parse error:", parseErr);
-      console.error("Raw response was:", rawText.substring(0, 500));
-      return NextResponse.json({
-        error: "Failed to parse AI response",
-        raw: rawText.substring(0, 500),
-      }, { status: 500 });
-    }
+    const rawText = textBlock.text;
+
+    // Parse plain text sections
+    const sections: Record<string, string> = {};
+
+    SECTION_HEADERS.forEach((header, i) => {
+      const start = rawText.indexOf(header);
+      if (start === -1) return;
+
+      const contentStart = start + header.length;
+      const nextHeader = SECTION_HEADERS[i + 1];
+      const end = nextHeader
+        ? rawText.indexOf(nextHeader)
+        : rawText.length;
+
+      sections[header] = rawText
+        .substring(contentStart, end === -1 ? rawText.length : end)
+        .trim();
+    });
+
+    console.log("Parsed sections:", Object.keys(sections));
+
+    return NextResponse.json({
+      success: true,
+      sections,
+      rawText,
+    });
   } catch (error: unknown) {
     console.error("Research synthesis error:", error);
     let msg = "Research synthesis failed";
