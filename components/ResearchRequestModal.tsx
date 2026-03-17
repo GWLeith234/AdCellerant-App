@@ -16,11 +16,17 @@ export default function ResearchRequestModal({ deal, onClose }: ResearchRequestM
   const [showToast, setShowToast] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(triggerText);
-    setCopied(true);
-    setShowToast(true);
-    setTimeout(() => setCopied(false), 2000);
-    setTimeout(() => setShowToast(false), 3000);
+    navigator.clipboard.writeText(triggerText)
+      .then(() => {
+        console.log("Clipboard write succeeded");
+        setCopied(true);
+        setShowToast(true);
+        setTimeout(() => setCopied(false), 2000);
+        setTimeout(() => setShowToast(false), 3000);
+      })
+      .catch((err) => {
+        console.error("Clipboard failed:", err);
+      });
   };
 
   return (
@@ -71,14 +77,13 @@ export default function ResearchRequestModal({ deal, onClose }: ResearchRequestM
       {/* Toast — fixed bottom center */}
       {showToast && (
         <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 text-white text-center whitespace-nowrap"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] text-white text-center whitespace-nowrap pointer-events-none"
           style={{
             background: "#2ECC8A",
             padding: "10px 20px",
             borderRadius: 8,
             fontSize: 11,
             fontWeight: 600,
-            zIndex: 999,
           }}
         >
           ✅ Trigger copied — paste it into Claude
