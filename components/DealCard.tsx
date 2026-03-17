@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { ParsedDeal, MeddicScore } from "@/lib/hubspot";
+import { dealHealthScore } from "@/lib/dealHealth";
 
 interface DealCardProps {
   deal: ParsedDeal;
@@ -92,12 +94,14 @@ function personaPillStyle(persona: string): { bg: string; text: string } {
 }
 
 export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: DealCardProps) {
+  const [showHealthTip, setShowHealthTip] = useState(false);
   const days = daysUntilClose(deal.closeDate);
   const isUrgent = days <= 2 && deal.cat !== "cw";
   const isWhale = deal.val >= 250_000;
   const isVendasta = deal.rep === "vendasta" || (deal.persona || "").toLowerCase().includes("vendasta");
   const meddicFields = Object.entries(deal.meddic) as [keyof MeddicScore, string][];
   const pill = stagePillStyle(deal.stage);
+  const health = dealHealthScore(deal);
 
   return (
     <div
@@ -295,6 +299,62 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
               {days <= 1 && deal.cat !== "cw" ? " — TODAY" : ""}
             </p>
           )}
+          {/* Health score badge */}
+          <div
+            style={{ position: "relative", marginTop: 4 }}
+            onMouseEnter={() => setShowHealthTip(true)}
+            onMouseLeave={() => setShowHealthTip(false)}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+                fontSize: 9,
+                fontWeight: 700,
+                fontFamily: "var(--font-orbitron, monospace)",
+                color:
+                  health.status === "green" ? "#2ECC8A"
+                  : health.status === "amber" ? "#F5A623"
+                  : "#FF4A2D",
+                background:
+                  health.status === "green" ? "rgba(46,204,138,0.1)"
+                  : health.status === "amber" ? "rgba(245,166,35,0.1)"
+                  : "rgba(255,74,45,0.1)",
+                border: `0.5px solid ${
+                  health.status === "green" ? "rgba(46,204,138,0.3)"
+                  : health.status === "amber" ? "rgba(245,166,35,0.3)"
+                  : "rgba(255,74,45,0.3)"
+                }`,
+                padding: "2px 5px",
+                borderRadius: 4,
+              }}
+            >
+              {health.score}%
+            </div>
+            {showHealthTip && health.missing.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "100%",
+                  left: 0,
+                  marginBottom: 4,
+                  background: "#0D1B2E",
+                  border: "0.5px solid #2A3F5C",
+                  fontSize: 9,
+                  color: "#F0F4F8",
+                  padding: "6px 8px",
+                  borderRadius: 6,
+                  maxWidth: 200,
+                  zIndex: 150,
+                  whiteSpace: "normal",
+                  lineHeight: 1.4,
+                }}
+              >
+                Missing: {health.missing.join(", ")}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right: MEDDIC dots + pills + AI button */}
