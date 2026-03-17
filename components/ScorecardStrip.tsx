@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { RepConfig } from "@/lib/reps";
+import { REP_PHOTOS } from "@/lib/repPhotos";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
 import FlagBadge from "./FlagBadge";
 import ArcCard from "./ArcCard";
@@ -61,15 +62,18 @@ export default function ScorecardStrip({ config, booked, targets }: ScorecardStr
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
             <div
-              className="w-[52px] h-[52px] rounded-full border-[3px] overflow-hidden bg-navy flex items-center justify-center relative"
-              style={{ borderColor: config.borderColor }}
+              className="w-[52px] h-[52px] rounded-full border-[3px] overflow-hidden flex items-center justify-center relative"
+              style={{
+                borderColor: config.borderColor,
+                backgroundColor: config.key === "vendasta" ? "#FFFFFF" : "#1C2F4A",
+              }}
             >
-              {config.photo ? (
+              {(REP_PHOTOS[config.key] || config.photo) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={config.photo}
+                  src={REP_PHOTOS[config.key] || config.photo}
                   alt=""
-                  className="w-full h-full object-cover relative z-10"
+                  className={`w-full h-full relative z-10 ${config.key === "vendasta" ? "object-contain p-1" : "object-cover"}`}
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 />
               ) : null}

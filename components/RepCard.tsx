@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { RepConfig } from "@/lib/reps";
+import { REP_PHOTOS } from "@/lib/repPhotos";
 import FlagBadge from "./FlagBadge";
 import RepStatTile from "./RepStatTile";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
@@ -70,15 +71,18 @@ export default function RepCard({
       <div className="px-4 pt-4 pb-3 flex items-center gap-3">
         <div className="relative flex-shrink-0">
           <div
-            className="w-[62px] h-[62px] rounded-full border-[3px] overflow-hidden bg-navy flex items-center justify-center relative"
-            style={{ borderColor: config.borderColor }}
+            className="w-[62px] h-[62px] rounded-full border-[3px] overflow-hidden flex items-center justify-center relative"
+            style={{
+              borderColor: config.borderColor,
+              backgroundColor: config.key === "vendasta" ? "#FFFFFF" : "#1C2F4A",
+            }}
           >
-            {config.photo ? (
+            {(REP_PHOTOS[config.key] || config.photo) ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={config.photo}
+                src={REP_PHOTOS[config.key] || config.photo}
                 alt=""
-                className="w-full h-full object-cover relative z-10"
+                className={`w-full h-full relative z-10 ${config.key === "vendasta" ? "object-contain p-1.5" : "object-cover"}`}
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
             ) : null}
