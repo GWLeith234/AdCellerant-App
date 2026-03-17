@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import WorldClock from "./WorldClock";
 
 export default function Topbar() {
@@ -11,11 +12,13 @@ export default function Topbar() {
       <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
         {/* Left: logo + divider + globe + brand */}
         <div className="flex items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logos/adcellerant-logo.png"
-            alt=""
-            style={{ height: '38px', width: 'auto', mixBlendMode: 'screen', display: 'block' }}
+          <Image
+            src="/logos/AdC_Logo_RGB_Inverse_copy.png"
+            alt="AdCellerant"
+            width={160}
+            height={38}
+            style={{ mixBlendMode: "screen" }}
+            priority
           />
 
           {/* Vertical divider */}
