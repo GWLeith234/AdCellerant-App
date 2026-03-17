@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import WorldClock from "./WorldClock";
 import { useRevenueData } from "@/lib/RevenueDataContext";
+import { REP_PHOTOS } from "@/lib/repPhotos";
 
 export default function Topbar() {
   const { dataSource, hasRevenueData } = useRevenueData();
@@ -40,13 +40,11 @@ export default function Topbar() {
       <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
         {/* Left: logo + divider + globe + brand */}
         <div className="flex items-center">
-          <Image
-            src="/logos/AdC_Logo_RGB_Inverse_copy.png"
-            alt="AdCellerant"
-            width={160}
-            height={38}
-            style={{ mixBlendMode: "screen" }}
-            priority
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={REP_PHOTOS.logo}
+            alt=""
+            style={{ height: 38, width: "auto", mixBlendMode: "screen", display: "block" }}
           />
 
           {/* Vertical divider */}
