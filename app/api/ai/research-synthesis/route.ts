@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const message = await getClient().messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 1000,
-      system: `You are a senior sales intelligence analyst. Produce a structured deal research brief based on all available deal context and notes. Be specific, actionable, and direct. Reference actual data from the deal context. Respond with raw JSON only. Do not wrap in markdown code blocks. Do not include \`\`\`json or \`\`\` anywhere in your response. Return only the JSON object itself.`,
+      system: `You are a senior sales intelligence analyst. You MUST respond with a valid JSON object only. Do NOT use markdown formatting. Do NOT wrap in code blocks. Do NOT include any text before or after the JSON. Start your response with { and end with }. Be specific, actionable, and direct. Reference actual data from the deal context.`,
       messages: [
         {
           role: "user",
@@ -99,27 +99,42 @@ Return ONLY valid JSON, no markdown fences.`,
       ],
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") {
-      return NextResponse.json({ error: "Unexpected response" }, { status: 500 });
+    const textBlock = message.content?.find(
+      (b: { type: string }) => b.type === "text"
+    );
+    const rawText = textBlock && "text" in textBlock ? textBlock.text : "";
+
+    console.log("Raw AI response:", JSON.stringify(message.content, null, 2));
+
+    if (!rawText) {
+      return NextResponse.json({ error: "Empty AI response" }, { status: 500 });
     }
 
-    const raw = content.text;
-    const cleaned = raw
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```\s*$/i, "")
-      .trim();
+    // Strip markdown code fences if present
+    let cleaned = rawText.trim();
+    // Remove opening ```json or ``` (possibly with leading whitespace/newlines)
+    cleaned = cleaned.replace(/^\s*```(?:json)?\s*\n?/i, "");
+    // Remove closing ```
+    cleaned = cleaned.replace(/\n?\s*```\s*$/g, "");
+    cleaned = cleaned.trim();
+
+    if (!cleaned.startsWith("{") && !cleaned.startsWith("[")) {
+      console.error("Response is not JSON:", cleaned.substring(0, 200));
+      return NextResponse.json({
+        error: "AI returned non-JSON response",
+        preview: cleaned.substring(0, 200),
+      }, { status: 500 });
+    }
 
     try {
       const parsed = JSON.parse(cleaned);
       return NextResponse.json(parsed);
     } catch (parseErr) {
       console.error("Research parse error:", parseErr);
-      console.error("Raw response was:", raw.substring(0, 200));
+      console.error("Raw response was:", rawText.substring(0, 500));
       return NextResponse.json({
         error: "Failed to parse AI response",
-        raw: raw.substring(0, 500),
+        raw: rawText.substring(0, 500),
       }, { status: 500 });
     }
   } catch (error: unknown) {
