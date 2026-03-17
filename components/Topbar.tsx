@@ -243,6 +243,14 @@ const orb = "var(--font-orbitron), monospace";
 export default function Topbar() {
   const router = useRouter();
   const [times, setTimes] = useState({ denver: "", saskatoon: "", london: "" });
+  const [hubspotLive, setHubspotLive] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/hubspot/deals")
+      .then((res) => res.json())
+      .then((data) => setHubspotLive(!data.mock))
+      .catch(() => setHubspotLive(false));
+  }, []);
 
   useEffect(() => {
     function tick() {
@@ -382,6 +390,31 @@ export default function Topbar() {
             </Link>
           </div>
         </div>
+
+        {/* Status badge — never overlaps text */}
+        <span
+          style={{
+            fontFamily: orb,
+            fontSize: 7,
+            fontWeight: 700,
+            letterSpacing: 1,
+            padding: "3px 8px",
+            borderRadius: 4,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            marginLeft: 12,
+            border: hubspotLive
+              ? "1px solid rgba(46,204,138,0.3)"
+              : "1px solid rgba(245,166,35,0.3)",
+            background: hubspotLive
+              ? "rgba(46,204,138,0.1)"
+              : "rgba(245,166,35,0.1)",
+            color: hubspotLive ? "#2ECC8A" : "#F5A623",
+          }}
+          className="hidden-below-480"
+        >
+          {hubspotLive ? "● Live" : "⚠ Mock"}
+        </span>
       </div>
 
       {/* ── RIGHT PANEL — City panels ── */}

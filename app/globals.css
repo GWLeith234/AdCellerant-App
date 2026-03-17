@@ -29,3 +29,9 @@ body {
 .animate-slide-in {
   animation: slide-in-right 0.25s ease-out;
 }
+
+@media (max-width: 480px) {
+  .hidden-below-480 {
+    display: none;
+  }
+}
