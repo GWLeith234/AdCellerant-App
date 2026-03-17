@@ -8,14 +8,14 @@ const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep
 const ANDY_PARTNERS = [
   "ams",
   "beettoo",
-  "convergence digital",
+  "convergence digital - uk",
   "innocean",
 ];
 
 function partnerToRep(partnerName: string): string {
   // Normalize: trim, lowercase, collapse whitespace
   const key = partnerName.trim().toLowerCase().replace(/\s+/g, " ");
-  return ANDY_PARTNERS.some((p) => key === p || key.startsWith(p)) ? "andy" : "george";
+  return ANDY_PARTNERS.includes(key) ? "andy" : "george";
 }
 
 /**
