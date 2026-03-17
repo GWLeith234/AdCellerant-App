@@ -27,3 +27,39 @@ export function dealHealthScore(deal: ParsedDeal): {
   const status = score >= 80 ? "green" : score >= 50 ? "amber" : "red";
   return { score, missing, status };
 }
+
+export function dealWarmth(deal: ParsedDeal): {
+  daysStale: number;
+  status: "warm" | "cooling" | "cold";
+  nudgeRequired: boolean;
+  urgency: "low" | "medium" | "high";
+} {
+  const days = deal.stageAge;
+
+  // Stage-aware thresholds — Negotiation goes cold faster
+  const thresholds = {
+    neg: { cooling: 3, cold: 7 },
+    prop: { cooling: 5, cold: 10 },
+    leads: { cooling: 7, cold: 14 },
+  };
+
+  const t =
+    deal.cat === "neg"
+      ? thresholds.neg
+      : deal.cat === "prop"
+        ? thresholds.prop
+        : thresholds.leads;
+
+  const status: "warm" | "cooling" | "cold" =
+    days < t.cooling ? "warm" : days < t.cold ? "cooling" : "cold";
+
+  const urgency: "low" | "medium" | "high" =
+    status === "cold" ? "high" : status === "cooling" ? "medium" : "low";
+
+  return {
+    daysStale: days,
+    status,
+    nudgeRequired: status !== "warm",
+    urgency,
+  };
+}

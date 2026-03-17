@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ParsedDeal, MeddicScore } from "@/lib/hubspot";
-import { dealHealthScore } from "@/lib/dealHealth";
+import { dealHealthScore, dealWarmth } from "@/lib/dealHealth";
 
 interface DealCardProps {
   deal: ParsedDeal;
@@ -51,10 +51,10 @@ function stagePillStyle(stage: string): { bg: string; border: string; text: stri
   return { bg: "rgba(107,127,150,0.15)", border: "rgba(107,127,150,0.3)", text: "#6B7F96" };
 }
 
-// Age badge RAG colour
-function ageColor(days: number): string {
-  if (days <= 6) return "#2ECC8A";
-  if (days <= 13) return "#F5A623";
+// Age badge colour — driven by dealWarmth status
+function ageColorFromWarmth(status: "warm" | "cooling" | "cold"): string {
+  if (status === "warm") return "#2ECC8A";
+  if (status === "cooling") return "#F5A623";
   return "#FF4A2D";
 }
 
@@ -102,6 +102,7 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
   const meddicFields = Object.entries(deal.meddic) as [keyof MeddicScore, string][];
   const pill = stagePillStyle(deal.stage);
   const health = dealHealthScore(deal);
+  const warmth = dealWarmth(deal);
 
   return (
     <div
@@ -215,13 +216,18 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
                   borderRadius: 9,
                   padding: "0 6px",
                   fontSize: 10,
-                  color: ageColor(deal.stageAge),
+                  color: ageColorFromWarmth(warmth.status),
                   display: "inline-flex",
                   alignItems: "center",
                   height: 18,
                   fontWeight: 500,
+                  gap: 2,
                 }}
+                title={warmth.status === "cold" ? "Deal going cold — send a touchpoint today" : undefined}
               >
+                {warmth.status === "cold" && (
+                  <span style={{ fontSize: 10, lineHeight: 1 }}>🔥</span>
+                )}
                 {deal.stageAge}d
               </span>
             )}
