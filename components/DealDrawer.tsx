@@ -278,9 +278,12 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
   const handleDeepResearch = useCallback(() => {
     if (!deal) return;
-    const trigger = `New Lead — ${deal.name}, ${deal.persona || "Unknown"}`;
-    navigator.clipboard.writeText(trigger);
-    window.open("https://claude.ai/project/019c2f71-edd1-7381-8879-219db0696fd0", "_blank");
+    const projectUrl =
+      "https://claude.ai/project/" +
+      process.env.NEXT_PUBLIC_CLAUDE_PROJECT_ID;
+    const trigger = `New Lead — ${deal.name}, ${deal.persona || "Partner"}`;
+    navigator.clipboard.writeText(trigger).catch(() => {});
+    window.open(projectUrl, "_blank");
     setResearchToast(true);
     setTimeout(() => setResearchToast(false), 3000);
   }, [deal]);
@@ -509,7 +512,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
             </DrawerSection>
 
             {/* Deep Research trigger */}
-            <div className="mb-4">
+            <div id="research-section" className="mb-4">
               <button
                 onClick={handleDeepResearch}
                 className="w-full text-left cursor-pointer transition-colors"
@@ -1085,7 +1088,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
             zIndex: 999,
           }}
         >
-          ✅ Research trigger copied — paste it into Claude
+          ✅ Research trigger copied — paste into Claude
         </div>
       )}
     </>
