@@ -67,16 +67,29 @@ function valueColor(deal: ParsedDeal): string {
   return "#F0F4F8";
 }
 
+// Days overdue (positive = overdue, 0 = today, negative = future)
+function daysOverdue(closeDate: string): number {
+  if (!closeDate) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const close = new Date(closeDate);
+  close.setHours(0, 0, 0, 0);
+  return Math.floor((today.getTime() - close.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 // Close date colour
 function closeDateColor(deal: ParsedDeal): string {
-  const days = daysUntilClose(deal.closeDate);
-  if (days <= 1) return "#FF4A2D";
+  if (!deal.closeDate || deal.cat === "cw") return "#6B7F96";
+  const diff = daysOverdue(deal.closeDate);
+  if (diff > 0) return "#FF4A2D";
+  if (diff === 0) return "#FF4A2D";
   return "#6B7F96";
 }
 
 function closeDateWeight(deal: ParsedDeal): number {
-  const days = daysUntilClose(deal.closeDate);
-  return days <= 1 ? 600 : 400;
+  if (!deal.closeDate || deal.cat === "cw") return 400;
+  const diff = daysOverdue(deal.closeDate);
+  return diff >= 0 ? 600 : 400;
 }
 
 // Persona pill style
@@ -298,11 +311,19 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
                 marginTop: 4,
               }}
             >
-              {new Date(deal.closeDate).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-              })}
-              {days <= 1 && deal.cat !== "cw" ? " — TODAY" : ""}
+              {(() => {
+                const diff = daysOverdue(deal.closeDate);
+                const dateStr = new Date(deal.closeDate).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                });
+                if (deal.cat === "cw") return dateStr;
+                if (diff > 0) return `${diff} day${diff === 1 ? "" : "s"} overdue`;
+                if (diff === 0) return "TODAY";
+                const absDiff = Math.abs(diff);
+                if (absDiff < 7) return `${dateStr} — in ${absDiff} day${absDiff === 1 ? "" : "s"}`;
+                return dateStr;
+              })()}
             </p>
           )}
           {/* Health score badge */}
