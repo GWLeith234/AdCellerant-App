@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Topbar from "@/components/Topbar";
 import DataUploadPanel from "@/components/DataUploadPanel";
 import { useRevenueData } from "@/lib/RevenueDataContext";
+import { useDealData } from "@/lib/DealDataContext";
 
 const ALLOWED_EMAILS = [
   "george.leith@adcellerant.com",
@@ -17,6 +18,7 @@ export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { loadRevenueData, resetRevenueData, hasRevenueData, dataSource } = useRevenueData();
+  const { loadUploadedDeals, resetUploadedDeals, hasUploadedDeals } = useDealData();
 
   const [hubspotStatus, setHubspotStatus] = useState<"checking" | "live" | "mock">("checking");
   const [anthropicStatus, setAnthropicStatus] = useState<"checking" | "connected" | "missing">("checking");
@@ -97,7 +99,9 @@ export default function AdminPage() {
           </h2>
           <DataUploadPanel
             onDataLoaded={loadRevenueData}
+            onDealsLoaded={loadUploadedDeals}
             hasExistingData={hasRevenueData}
+            hasExistingDeals={hasUploadedDeals}
           />
         </section>
 
@@ -140,9 +144,14 @@ export default function AdminPage() {
               status="muted"
             />
             <StatusRow
-              label="Data Source"
+              label="Revenue Source"
               value={dataSource === "csv" ? "CSV Upload" : dataSource === "live" ? "HubSpot Live" : "Mock Data"}
               status={dataSource === "mock" ? "amber" : "green"}
+            />
+            <StatusRow
+              label="Deal Source"
+              value={hasUploadedDeals ? "CSV Upload" : "Mock Data"}
+              status={hasUploadedDeals ? "green" : "amber"}
             />
           </div>
         </section>
@@ -153,13 +162,13 @@ export default function AdminPage() {
             Mock Data
           </h2>
           <button
-            onClick={resetRevenueData}
+            onClick={() => { resetRevenueData(); resetUploadedDeals(); }}
             className="bg-card border border-border hover:border-amber/50 text-muted hover:text-white px-5 py-3 rounded-xl text-sm font-medium transition-colors"
           >
             🔄 Reset to mock data
           </button>
           <p className="text-muted text-xs mt-2">
-            Clears any uploaded revenue data and reverts scorecards to mock values.
+            Clears any uploaded revenue and deal data, reverts to mock values.
           </p>
         </section>
       </main>

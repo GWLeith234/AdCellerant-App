@@ -16,6 +16,7 @@ interface ScorecardStripProps {
 }
 
 const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const GEORGE_ANNUAL_TARGET = 1_500_000;
 
 export default function ScorecardStrip({ config, booked, targets }: ScorecardStripProps) {
   const router = useRouter();
@@ -43,7 +44,10 @@ export default function ScorecardStrip({ config, booked, targets }: ScorecardStr
   // Annual YTD
   const ytdMonths = ALL_MONTHS.slice(0, currentMonthIdx + 1);
   const ytdBooked = ytdMonths.reduce((sum, m) => sum + (repBooked[m] || 0), 0);
-  const annualTarget = ALL_MONTHS.reduce((sum, m) => sum + (repTargets[m] || 0), 0);
+  const summedTarget = ALL_MONTHS.reduce((sum, m) => sum + (repTargets[m] || 0), 0);
+  const annualTarget = (config.key === "george" && summedTarget > 0 && summedTarget < GEORGE_ANNUAL_TARGET)
+    ? GEORGE_ANNUAL_TARGET
+    : (summedTarget || (config.key === "george" ? GEORGE_ANNUAL_TARGET : 0));
 
   return (
     <div className="space-y-4">

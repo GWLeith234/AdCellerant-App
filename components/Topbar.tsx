@@ -323,7 +323,10 @@ export default function Topbar() {
           }}
         />
 
-        {/* B) Brand text block */}
+        {/* Vertical divider */}
+        <div style={{ width: 1, height: 48, background: "#2A3F5C", flexShrink: 0 }} />
+
+        {/* B) Globe + COMMAND / CENTER */}
         <div
           style={{
             borderLeft: "0.5px solid #1E3A5F",
@@ -335,41 +338,38 @@ export default function Topbar() {
         >
           <span
             style={{
-              fontFamily: orb,
-              fontSize: 7.5,
-              fontWeight: 700,
-              color: "#FF4A2D",
-              letterSpacing: 2,
-              textTransform: "uppercase",
+              display: "flex",
+              flexDirection: "column",
+              gap: 0,
             }}
           >
-            INTERNATIONAL BUSINESS UNIT
-          </span>
-          <span
-            style={{
-              fontFamily: orb,
-              fontSize: 12,
-              fontWeight: 900,
-              color: "#4FC3D1",
-              letterSpacing: 3,
-              textTransform: "uppercase",
-            }}
-          >
-            COMMAND CENTER
-          </span>
-
-          {/* C) Date at HQ */}
-          <span
-            style={{
-              fontFamily: "var(--font-orbitron, monospace)",
-              fontSize: 7,
-              color: "#4FA3D1",
-              letterSpacing: 1,
-              opacity: 0.7,
-            }}
-          >
-            {formattedDate}
-          </span>
+            <span
+              style={{
+                fontFamily: orb,
+                fontSize: 16,
+                fontWeight: 700,
+                color: "#FF4A2D",
+                letterSpacing: 3,
+                textTransform: "uppercase",
+                lineHeight: 1.1,
+              }}
+            >
+              COMMAND
+            </span>
+            <span
+              style={{
+                fontFamily: orb,
+                fontSize: 11,
+                fontWeight: 400,
+                color: "#FF4A2D",
+                letterSpacing: 3,
+                textTransform: "uppercase",
+                lineHeight: 1.1,
+              }}
+            >
+              CENTER
+            </span>
+          </div>
         </div>
       </div>
 

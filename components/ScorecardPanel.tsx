@@ -8,14 +8,16 @@ import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
 const orb = "var(--font-orbitron), monospace";
 
 const GEORGE_REVENUE_TARGETS: Record<string, number> = {
-  Jan: 8985, Feb: 10553, Mar: 19966,
+  Jan: 8985, Feb: 10553, Mar: 39504,
   Apr: 14703, May: 17535, Jun: 34157,
   Jul: 29962, Aug: 29962, Sep: 29962,
   Oct: 29962, Nov: 29962, Dec: 29960,
 };
 
+const GEORGE_ANNUAL_TARGET = 1_500_000;
+
 const GEORGE_REVENUE_BOOKED: Record<string, number> = {
-  Jan: 5563, Feb: 12161, Mar: 15146, Apr: 12731,
+  Jan: 5563, Feb: 12161, Mar: 15146, Apr: 12731, May: 5234,
 };
 
 const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -94,7 +96,9 @@ function buildPeriods(
 
   // Annual
   const annRevBooked = ALL_MONTHS.reduce((s, m) => s + (rb[m] || 0), 0);
-  const annRevTarget = ALL_MONTHS.reduce((s, m) => s + (rt[m] || 0), 0);
+  const annRevTarget = (!hasUploaded && repKey === "george")
+    ? GEORGE_ANNUAL_TARGET
+    : ALL_MONTHS.reduce((s, m) => s + (rt[m] || 0), 0);
 
   const MARGIN_RATE = 0.30;
 
@@ -373,46 +377,6 @@ export default function ScorecardPanel({ config, booked, targets }: ScorecardPan
         ))}
       </div>
 
-      {/* ROW D: Attainment summary strip */}
-      <div
-        style={{
-          borderTop: "0.5px solid #1E3A5F",
-          paddingTop: 8,
-        }}
-      >
-        <div className="scorecard-grid" style={{ gap: 8 }}>
-          {periods.map((p) => {
-            const pct = attPct(p.revBooked, p.revTarget);
-            return (
-              <div key={`att-${p.label}`} style={{ textAlign: "center" }}>
-                <span
-                  style={{
-                    fontFamily: orb,
-                    fontSize: 17,
-                    fontWeight: 700,
-                    color: ragColor(pct),
-                    display: "block",
-                  }}
-                >
-                  {pct.toFixed(1)}%
-                </span>
-                <span
-                  style={{
-                    fontFamily: orb,
-                    fontSize: 7,
-                    color: "#6B7F96",
-                    letterSpacing: 1,
-                    display: "block",
-                    marginTop: 2,
-                  }}
-                >
-                  {p.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
