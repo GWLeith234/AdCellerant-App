@@ -4,14 +4,7 @@ import type { BookedByRepMonth, TargetsByRepMonth } from "./types";
 
 const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** Map HubSpot owner IDs to rep keys */
-const OWNER_ID_TO_REP: Record<string, string> = {
-  "78947458": "george",
-  "80955316": "andy",
-  "83471854": "alex",
-};
-
-/** Partners assigned to Andy McNab (UK revenue line) — fallback when no owner ID column */
+/** Partners assigned to Andy McNab (UK revenue line) */
 const ANDY_PARTNERS = [
   "ams",
   "beettoo",
@@ -77,31 +70,9 @@ export function parseBookedCSV(file: File): Promise<BookedByRepMonth> {
         // Row 0 = month headers: ["Billing Start Date", "2026-01", "2026-02", ...]
         const headerRow = rows[0];
 
-        // Check row 1 (label row) for an owner ID column
-        const labelRow = rows[1] || [];
-        let ownerIdCol = -1;
-        for (let c = 0; c < labelRow.length; c++) {
-          const label = (labelRow[c] || "").trim().toLowerCase().replace(/[\s_]+/g, "");
-          if (label.includes("ownerid") || label.includes("hubspotowner")) {
-            ownerIdCol = c;
-            break;
-          }
-        }
-        // Also check header row for owner ID column
-        if (ownerIdCol === -1) {
-          for (let c = 0; c < headerRow.length; c++) {
-            const label = (headerRow[c] || "").trim().toLowerCase().replace(/[\s_]+/g, "");
-            if (label.includes("ownerid") || label.includes("hubspotowner")) {
-              ownerIdCol = c;
-              break;
-            }
-          }
-        }
-
         // Build month map: column index → month short name
         const monthByCol: Record<number, string> = {};
         for (let c = 1; c < headerRow.length; c++) {
-          if (c === ownerIdCol) continue; // skip owner ID column
           const month = normalizeMonth(headerRow[c] || "");
           if (month) monthByCol[c] = month;
         }
@@ -122,16 +93,7 @@ export function parseBookedCSV(file: File): Promise<BookedByRepMonth> {
           // Skip empty partner name (totals row) or blank rows
           if (!partnerName) continue;
 
-          // Determine rep: use owner ID if available, otherwise fall back to partner name
-          let rep: string;
-          if (ownerIdCol !== -1) {
-            const ownerId = (row[ownerIdCol] || "").trim();
-            rep = OWNER_ID_TO_REP[ownerId] || "";
-            // Skip rows with unrecognized owner IDs (e.g. Vendasta or unknown)
-            if (!rep) continue;
-          } else {
-            rep = partnerToRep(partnerName);
-          }
+          const rep = partnerToRep(partnerName);
 
           for (const [colStr, month] of Object.entries(monthByCol)) {
             const col = parseInt(colStr, 10);
