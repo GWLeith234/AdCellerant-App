@@ -501,7 +501,13 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
           <DrawerHero deal={deal} />
 
           <div className="px-6 pb-6">
-            {/* Section 1: Next Action */}
+            {/* Section 1: MEDDIC */}
+            <div ref={meddicRef} />
+            <DrawerSection title="MEDDIC" icon={IconMeddic}>
+              <MeddicGrid meddic={deal.meddic} meddicNotes={deal.meddicNotes} />
+            </DrawerSection>
+
+            {/* Section 2: Next Action */}
             <DrawerSection title="Next Action" icon={IconAction}>
               <div className="flex gap-2">
                 <button className="flex-1 bg-blue hover:bg-blue/80 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-colors">
@@ -1030,12 +1036,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                   </div>
                 </div>
               )}
-            </DrawerSection>
-
-            {/* Section 4: MEDDIC */}
-            <div ref={meddicRef} />
-            <DrawerSection title="MEDDIC" icon={IconMeddic}>
-              <MeddicGrid meddic={deal.meddic} meddicNotes={deal.meddicNotes} />
             </DrawerSection>
 
             {/* Section 5: Contacts */}
