@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-
-function getClient() {
-  return new Anthropic();
-}
+import { createMessageWithRetry } from "@/lib/ai-retry";
 
 const SECTION_HEADERS = [
   "ACCOUNT INTELLIGENCE",
@@ -48,7 +45,7 @@ export async function POST(request: Request) {
       .map((k) => `${k.toUpperCase()}: ${deal[k] || "not started"}`)
       .join(", ");
 
-    const message = await getClient().messages.create({
+    const message = await createMessageWithRetry({
       model: "claude-sonnet-4-5",
       max_tokens: 1500,
       system: `You are an elite sales intelligence analyst. Return your analysis as plain text with these exact section headers on their own lines:

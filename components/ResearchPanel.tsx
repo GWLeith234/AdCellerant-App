@@ -57,7 +57,8 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
         sessionCache.set(deal.id, result);
         setData(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load research");
+        const msg = err instanceof Error ? err.message : "";
+        setError(msg.includes("not configured") ? msg : "Something went wrong — try again");
       } finally {
         setLoading(false);
       }
@@ -112,7 +113,7 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6 pb-8">
           {/* Loading state: pulsing purple orb */}
           {loading && !data && (
             <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -151,14 +152,14 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
                   >
                     <div className="bg-[#7C3AED]/10 px-4 py-2.5 border-b border-[#7C3AED]/20">
                       <h3
-                        className="text-[#7C3AED] text-xs font-semibold tracking-wider"
+                        className="text-[#A78BFA] text-xs font-semibold tracking-wider"
                         style={{ fontFamily: "var(--font-orbitron, monospace)", textTransform: "uppercase" }}
                       >
                         {header}
                       </h3>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-slate text-[13px] leading-[1.6] whitespace-pre-wrap">
+                      <p className="text-[#F0F4F8] text-[13px] leading-[1.6] whitespace-pre-wrap">
                         {content}
                       </p>
                     </div>
