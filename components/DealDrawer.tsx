@@ -100,12 +100,14 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   const [emailBody, setEmailBody] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailCopied, setEmailCopied] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   // --- Research panel state ---
   const [showResearch, setShowResearch] = useState(false);
 
   // --- Deep research trigger state ---
   const [researchToast, setResearchToast] = useState(false);
+  const [showResearchWarning, setShowResearchWarning] = useState(false);
 
   // --- Keep Warm outreach state ---
   const [outreachChannel, setOutreachChannel] = useState<"email" | "linkedin" | "sms" | null>(null);
@@ -114,6 +116,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   const [outreachSent, setOutreachSent] = useState(false);
   const [outreachLogged, setOutreachLogged] = useState(false);
   const [outreachToast, setOutreachToast] = useState<string | null>(null);
+  const [outreachError, setOutreachError] = useState<string | null>(null);
 
   // --- Nudge banner dismiss state (session-only) ---
   const [dismissHealth, setDismissHealth] = useState(false);
@@ -134,13 +137,16 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setEmailBody("");
     setEmailLoading(false);
     setEmailCopied(false);
+    setEmailError(null);
     setShowResearch(false);
+    setShowResearchWarning(false);
     setOutreachChannel(null);
     setOutreachLoading(false);
     setOutreachData(null);
     setOutreachSent(false);
     setOutreachLogged(false);
     setOutreachToast(null);
+    setOutreachError(null);
     setDismissHealth(false);
     setDismissResearch(false);
     setDismissStageGate(false);
@@ -190,7 +196,8 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       setStageWarning(data.warning || null);
       setLogStatus("idle");
     } catch (err) {
-      setLogError(err instanceof Error ? err.message : "Parse failed");
+      const msg = err instanceof Error ? err.message : "";
+      setLogError(msg.includes("not configured") ? msg : "Something went wrong — try again");
       setLogStatus("error");
     }
   }, [logText, deal]);
@@ -234,8 +241,8 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       setLogText("");
       setLogOps(null);
       setLogSummary("");
-    } catch (err) {
-      setLogError(err instanceof Error ? err.message : "Save failed");
+    } catch {
+      setLogError("Something went wrong — try again");
       setLogStatus("error");
     }
   }, [deal, logOps]);
@@ -245,6 +252,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     if (!deal) return;
     setEmailLoading(true);
     setEmailCopied(false);
+    setEmailError(null);
     try {
       const res = await fetch("/api/ai/draft-email", {
         method: "POST",
@@ -260,10 +268,10 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       }
       setEmailSubject(data.subject || "");
       setEmailBody(data.body || "");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Email generation failed";
+    } catch {
       setEmailSubject("");
-      setEmailBody(`[Error] ${msg}`);
+      setEmailBody("");
+      setEmailError("Something went wrong — try again");
     } finally {
       setEmailLoading(false);
     }
@@ -276,13 +284,13 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setTimeout(() => setEmailCopied(false), 2000);
   }, [emailSubject, emailBody]);
 
-  const handleDeepResearch = useCallback(() => {
+  const handleCopyResearchTrigger = useCallback(() => {
     if (!deal) return;
+    const trigger = `New Lead — ${deal.name}, ${deal.persona || "Partner"}`;
+    navigator.clipboard.writeText(trigger).catch(() => {});
     const projectUrl =
       "https://claude.ai/project/" +
       process.env.NEXT_PUBLIC_CLAUDE_PROJECT_ID;
-    const trigger = `New Lead — ${deal.name}, ${deal.persona || "Partner"}`;
-    navigator.clipboard.writeText(trigger).catch(() => {});
     window.open(projectUrl, "_blank");
     setResearchToast(true);
     setTimeout(() => setResearchToast(false), 3000);
@@ -313,8 +321,10 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || "Generation failed");
       setOutreachData(data);
+      setOutreachError(null);
     } catch {
-      setOutreachData({ message: "[Error] Could not generate message. Try again." });
+      setOutreachData(null);
+      setOutreachError("Something went wrong — try again");
     } finally {
       setOutreachLoading(false);
     }
@@ -451,7 +461,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       No research on file — deep research recommended before next meeting
                     </span>
                     <button
-                      onClick={handleDeepResearch}
+                      onClick={() => setShowResearchWarning(true)}
                       style={{ fontSize: 10, color: "#A78BFA", fontWeight: 600, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
                     >
                       ✦ Launch Research →
@@ -513,29 +523,51 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
             {/* Deep Research trigger */}
             <div id="research-section" className="mb-4">
-              <button
-                onClick={handleDeepResearch}
-                className="w-full text-left cursor-pointer transition-colors"
-                style={{
-                  background: deal.hasResearch ? "transparent" : "rgba(139, 92, 246, 0.15)",
-                  border: deal.hasResearch ? "1px solid rgba(139, 92, 246, 0.25)" : "1px solid rgba(139, 92, 246, 0.4)",
-                  color: deal.hasResearch ? "rgba(167, 139, 250, 0.6)" : "#A78BFA",
-                  borderRadius: 8,
-                  padding: "10px 14px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(139, 92, 246, 0.25)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = deal.hasResearch
-                    ? "transparent"
-                    : "rgba(139, 92, 246, 0.15)";
-                }}
-              >
-                {deal.hasResearch ? "↺ Update Research" : "✦ Launch Deep Research"}
-              </button>
+              {deal.hasResearch ? (
+                <button
+                  onClick={handleCopyResearchTrigger}
+                  className="w-full text-left cursor-pointer transition-colors"
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(139, 92, 246, 0.25)",
+                    color: "rgba(167, 139, 250, 0.6)",
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(139, 92, 246, 0.25)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  }}
+                >
+                  ↺ Update Research
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowResearchWarning(true)}
+                  className="w-full text-left cursor-pointer transition-colors"
+                  style={{
+                    background: "rgba(245, 166, 35, 0.12)",
+                    border: "1px solid rgba(245, 166, 35, 0.4)",
+                    color: "#F5A623",
+                    borderRadius: 8,
+                    padding: "10px 14px",
+                    fontSize: 11,
+                    fontWeight: 600,
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(245, 166, 35, 0.20)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(245, 166, 35, 0.12)";
+                  }}
+                >
+                  ⚠ No Research on File
+                </button>
+              )}
             </div>
 
             {/* Keep Warm section — only when nudgeRequired */}
@@ -670,6 +702,11 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       <span className="w-3 h-3 border-2 border-[#4FC3D1] border-t-transparent rounded-full animate-spin" />
                       <span style={{ fontSize: 10, color: "#6B7F96" }}>Generating message...</span>
                     </div>
+                  )}
+
+                  {/* Outreach error */}
+                  {outreachError && !outreachLoading && (
+                    <p style={{ fontSize: 11, color: "#FF4A2D", padding: "8px 0" }}>{outreachError}</p>
                   )}
 
                   {/* Message preview */}
@@ -962,7 +999,11 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                 )}
               </button>
 
-              {(emailSubject || emailBody) && (
+              {emailError && (
+                <p className="text-orange text-xs mt-2">{emailError}</p>
+              )}
+
+              {(emailSubject || emailBody) && !emailError && (
                 <div className="mt-3 space-y-2">
                   <div className="bg-navy/50 rounded-lg px-3 py-2">
                     <p className="text-muted text-[10px] uppercase tracking-wider mb-1">Subject</p>
@@ -977,14 +1018,14 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                       onClick={handleCopyEmail}
                       className="bg-green/20 text-green text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-green/30 transition-colors"
                     >
-                      {emailCopied ? "Copied!" : "Copy to Clipboard"}
+                      {emailCopied ? "✅ Copied!" : "📋 Copy to Clipboard"}
                     </button>
                     <button
                       onClick={handleGenerateEmail}
                       disabled={emailLoading}
                       className="bg-navy/50 text-muted text-xs font-medium px-3 py-1.5 rounded-lg hover:text-white transition-colors"
                     >
-                      Regenerate
+                      ↺ Regenerate
                     </button>
                   </div>
                 </div>
@@ -1053,6 +1094,68 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
         </div>
       </div>
 
+      {/* Research Warning modal */}
+      {showResearchWarning && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-[70]" onClick={() => setShowResearchWarning(false)} />
+          <div
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[71] w-[360px] rounded-xl shadow-2xl border"
+            style={{ background: "#1A2332", borderColor: "rgba(245,166,35,0.3)" }}
+          >
+            <div style={{ padding: "20px 24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                <span style={{ fontSize: 18, color: "#F5A623" }}>⚠</span>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: "#F0F4F8" }}>No Research on File</h3>
+              </div>
+              <p style={{ fontSize: 12, color: "#6B7F96", marginBottom: 12 }}>{deal.name}</p>
+              <div style={{
+                background: "rgba(245,166,35,0.06)",
+                border: "0.5px solid rgba(245,166,35,0.2)",
+                borderRadius: 8,
+                padding: "10px 12px",
+                marginBottom: 16,
+              }}>
+                <p style={{ fontSize: 10, color: "#6B7F96", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Research Trigger</p>
+                <p style={{ fontSize: 12, color: "#F0F4F8" }}>New Lead — {deal.name}, {deal.persona || "Partner"}</p>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={handleCopyResearchTrigger}
+                  style={{
+                    flex: 1,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: "8px 0",
+                    borderRadius: 8,
+                    background: "rgba(167,139,250,0.15)",
+                    border: "0.5px solid rgba(167,139,250,0.4)",
+                    color: "#A78BFA",
+                    cursor: "pointer",
+                  }}
+                >
+                  Copy Research Trigger
+                </button>
+                <button
+                  onClick={() => setShowResearchWarning(false)}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    padding: "8px 16px",
+                    borderRadius: 8,
+                    background: "none",
+                    border: "0.5px solid #2A3F5C",
+                    color: "#6B7F96",
+                    cursor: "pointer",
+                  }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Research Panel overlay */}
       {showResearch && (
         <ResearchPanel deal={deal} onClose={() => setShowResearch(false)} />
@@ -1088,7 +1191,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
             zIndex: 999,
           }}
         >
-          ✅ Research trigger copied — paste into Claude
+          ✅ Trigger copied — paste it into Claude
         </div>
       )}
     </>

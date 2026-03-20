@@ -57,7 +57,8 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
         sessionCache.set(deal.id, result);
         setData(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load research");
+        const msg = err instanceof Error ? err.message : "";
+        setError(msg.includes("not configured") ? msg : "Something went wrong — try again");
       } finally {
         setLoading(false);
       }
@@ -151,7 +152,7 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
                   >
                     <div className="bg-[#7C3AED]/10 px-4 py-2.5 border-b border-[#7C3AED]/20">
                       <h3
-                        className="text-[#7C3AED] text-xs font-semibold tracking-wider"
+                        className="text-[#A78BFA] text-xs font-semibold tracking-wider"
                         style={{ fontFamily: "var(--font-orbitron, monospace)", textTransform: "uppercase" }}
                       >
                         {header}
