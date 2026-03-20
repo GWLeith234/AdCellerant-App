@@ -14,6 +14,8 @@ const GEORGE_REVENUE_TARGETS: Record<string, number> = {
   Oct: 29962, Nov: 29962, Dec: 29960,
 };
 
+const GEORGE_ANNUAL_TARGET = 1_500_000;
+
 const GEORGE_REVENUE_BOOKED: Record<string, number> = {
   Jan: 5563, Feb: 12161, Mar: 15146, Apr: 12731, May: 5234,
 };
@@ -94,7 +96,9 @@ function buildPeriods(
 
   // Annual
   const annRevBooked = ALL_MONTHS.reduce((s, m) => s + (rb[m] || 0), 0);
-  const annRevTarget = ALL_MONTHS.reduce((s, m) => s + (rt[m] || 0), 0);
+  const annRevTarget = (!hasUploaded && repKey === "george")
+    ? GEORGE_ANNUAL_TARGET
+    : ALL_MONTHS.reduce((s, m) => s + (rt[m] || 0), 0);
 
   const MARGIN_RATE = 0.30;
 
