@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { createMessageWithRetry } from "@/lib/ai-retry";
+
+function getClient() {
+  return new Anthropic();
+}
 
 const CHANNEL_PROMPTS: Record<string, string> = {
   email: `You are George Leith, President of International Partnerships at AdCellerant. Write a short, warm follow-up email (80-120 words) to keep this deal moving. Use George's voice: direct, warm, specific, never corporate. Reference the deal context provided. End with a single soft ask — a quick call or a reply.
@@ -44,7 +47,7 @@ export async function POST(request: Request) {
           .join(", ")
       : "No MEDDIC data";
 
-    const message = await createMessageWithRetry({
+    const message = await getClient().messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 500,
       system: `${systemPrompt}\nRespond with raw JSON only. Do not wrap in markdown code blocks.`,

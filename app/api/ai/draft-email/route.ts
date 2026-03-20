@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { createMessageWithRetry } from "@/lib/ai-retry";
+
+function getClient() {
+  return new Anthropic();
+}
 
 const TONE_DESCRIPTIONS: Record<string, string> = {
   warm: "Warm & Relationship-focused — build rapport, show genuine interest, personal touch",
@@ -43,7 +46,7 @@ export async function POST(request: Request) {
       .map((c: { name: string; role: string }) => `${c.name} (${c.role})`)
       .join(", ") || "No contacts listed";
 
-    const message = await createMessageWithRetry({
+    const message = await getClient().messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 1000,
       system: `You are George Leith, President, International at AdCellerant. You write emails that are:

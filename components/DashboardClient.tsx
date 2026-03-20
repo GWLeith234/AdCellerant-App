@@ -74,15 +74,6 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
 
   const [selectedDeal, setSelectedDeal] = useState<ParsedDeal | null>(null);
   const [researchDeal, setResearchDeal] = useState<ParsedDeal | null>(null);
-
-  // Open drawer and scroll to research section
-  const handleResearchClick = useCallback((deal: ParsedDeal) => {
-    setSelectedDeal(deal);
-    setTimeout(() => {
-      document.getElementById("research-section")
-        ?.scrollIntoView({ behavior: "smooth" });
-    }, 300);
-  }, []);
   const [refreshing, setRefreshing] = useState(false);
 
   // Track last refresh timestamp
@@ -182,7 +173,7 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
           booked={bookedByRepMonth}
           targets={targetsByRepMonth}
           onDealClick={setSelectedDeal}
-          onResearchClick={handleResearchClick}
+          onResearchClick={setResearchDeal}
         />
       )}
 

@@ -71,10 +71,10 @@ function buildPeriods(
   booked: BookedByRepMonth,
   targets: TargetsByRepMonth,
 ): PeriodData[] {
-  // Use uploaded data; fall back to hardcoded George data only if no uploaded data exists
-  const hasUploaded = Object.keys(booked).length > 0 || Object.keys(targets).length > 0;
-  const rb = hasUploaded ? (booked[repKey] || {}) : (repKey === "george" ? GEORGE_REVENUE_BOOKED : {});
-  const rt = hasUploaded ? (targets[repKey] || {}) : (repKey === "george" ? GEORGE_REVENUE_TARGETS : {});
+  // Use George's hard-coded data for george, otherwise fall back to context
+  const isGeorge = repKey === "george";
+  const rb = isGeorge ? GEORGE_REVENUE_BOOKED : (booked[repKey] || {});
+  const rt = isGeorge ? GEORGE_REVENUE_TARGETS : (targets[repKey] || {});
 
   // March
   const marRevBooked = rb["Mar"] || 0;
