@@ -22,7 +22,7 @@ export async function createMessageWithRetry(
         signal: controller.signal,
       });
       clearTimeout(timeout);
-      return message;
+      return message as Anthropic.Message;
     } catch (err) {
       clearTimeout(timeout);
       lastError = err as Error;
