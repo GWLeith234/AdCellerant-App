@@ -158,7 +158,7 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
                       </h3>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-slate text-[13px] leading-[1.6] whitespace-pre-wrap">
+                      <p className="text-[#F0F4F8] text-[13px] leading-[1.6] whitespace-pre-wrap">
                         {content}
                       </p>
                     </div>
