@@ -381,7 +381,7 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
             if (!name) continue; // skip rows without a deal name
 
             const stageRaw = findCol(row, "DealStage", "Deal Stage", "Stage", "Pipeline Stage")
-              .toLowerCase().replace(/[\s_]+/g, "");
+              .toLowerCase().replace(/[^a-z0-9]/g, "");
             const stageInfo = STAGE_MAP[stageRaw] || {
               category: "leads",
               label: stageRaw || "Unknown",

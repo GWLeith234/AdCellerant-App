@@ -379,7 +379,7 @@ export async function fetchAllDeals(): Promise<ParsedDeal[]> {
             {
               propertyName: "dealstage",
               operator: "NOT_IN",
-              values: ["closedwon", "closedlost"],
+              values: ["closedlost"],
             },
           ],
         },
