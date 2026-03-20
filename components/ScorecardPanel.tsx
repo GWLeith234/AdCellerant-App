@@ -373,46 +373,6 @@ export default function ScorecardPanel({ config, booked, targets }: ScorecardPan
         ))}
       </div>
 
-      {/* ROW D: Attainment summary strip */}
-      <div
-        style={{
-          borderTop: "0.5px solid #1E3A5F",
-          paddingTop: 8,
-        }}
-      >
-        <div className="scorecard-grid" style={{ gap: 8 }}>
-          {periods.map((p) => {
-            const pct = attPct(p.revBooked, p.revTarget);
-            return (
-              <div key={`att-${p.label}`} style={{ textAlign: "center" }}>
-                <span
-                  style={{
-                    fontFamily: orb,
-                    fontSize: 17,
-                    fontWeight: 700,
-                    color: ragColor(pct),
-                    display: "block",
-                  }}
-                >
-                  {pct.toFixed(1)}%
-                </span>
-                <span
-                  style={{
-                    fontFamily: orb,
-                    fontSize: 7,
-                    color: "#6B7F96",
-                    letterSpacing: 1,
-                    display: "block",
-                    marginTop: 2,
-                  }}
-                >
-                  {p.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

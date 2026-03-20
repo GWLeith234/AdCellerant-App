@@ -357,7 +357,7 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
                 borderRadius: 4,
               }}
             >
-              {health.score}%
+              MEDDIC {health.score}%
             </div>
             {showHealthTip && health.missing.length > 0 && (
               <div
