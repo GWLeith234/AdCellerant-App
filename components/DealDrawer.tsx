@@ -123,6 +123,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
   const [dismissResearch, setDismissResearch] = useState(false);
   const [dismissStageGate, setDismissStageGate] = useState(false);
   const meddicRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Reset all states when deal changes
   useEffect(() => {
@@ -150,6 +151,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setDismissHealth(false);
     setDismissResearch(false);
     setDismissStageGate(false);
+    scrollRef.current?.scrollTo({ top: 0 });
   }, [deal?.id]);
 
   // Close on Escape
@@ -405,7 +407,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
         </button>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {/* Nudge banners */}
           {(() => {
             const health = dealHealthScore(deal);
