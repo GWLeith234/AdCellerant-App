@@ -96,7 +96,7 @@ function buildPeriods(
 
   // Annual
   const annRevBooked = ALL_MONTHS.reduce((s, m) => s + (rb[m] || 0), 0);
-  const annRevTarget = (!hasUploaded && repKey === "george")
+  const annRevTarget = (isGeorge)
     ? GEORGE_ANNUAL_TARGET
     : ALL_MONTHS.reduce((s, m) => s + (rt[m] || 0), 0);
 

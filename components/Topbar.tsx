@@ -369,7 +369,7 @@ export default function Topbar() {
             >
               CENTER
             </span>
-          </div>
+          </span>
         </div>
       </div>
 
