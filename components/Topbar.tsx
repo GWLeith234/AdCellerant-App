@@ -314,7 +314,7 @@ export default function Topbar() {
         <AdCellerantIcon size={38} />
 
         {/* Vertical divider */}
-        <div style={{ width: 0.5, height: 48, background: "#1E3A5F", flexShrink: 0 }} />
+        <div style={{ width: 1, height: 48, background: "#2A3F5C", flexShrink: 0 }} />
 
         {/* B) Globe + COMMAND / CENTER */}
         <div
@@ -329,17 +329,18 @@ export default function Topbar() {
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 1,
+              gap: 0,
             }}
           >
             <span
               style={{
                 fontFamily: orb,
-                fontSize: 14,
-                fontWeight: 900,
+                fontSize: 16,
+                fontWeight: 700,
                 color: "#FF4A2D",
                 letterSpacing: 3,
                 textTransform: "uppercase",
+                lineHeight: 1.1,
               }}
             >
               COMMAND
@@ -347,11 +348,12 @@ export default function Topbar() {
             <span
               style={{
                 fontFamily: orb,
-                fontSize: 10,
-                fontWeight: 600,
+                fontSize: 11,
+                fontWeight: 400,
                 color: "#FF4A2D",
                 letterSpacing: 3,
                 textTransform: "uppercase",
+                lineHeight: 1.1,
               }}
             >
               CENTER
