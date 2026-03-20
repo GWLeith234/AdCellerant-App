@@ -57,22 +57,13 @@ export default function RepCard({
   return (
     <div
       onClick={() => router.push(`/dashboard/${config.key}`)}
-      className="border border-border rounded-xl overflow-hidden cursor-pointer transition-all flex flex-col"
-      style={{ background: "#1C2F4A" }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-3px)";
-        e.currentTarget.style.borderColor = "#4FA3D1";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.borderColor = "";
-      }}
+      className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-blue/50 transition-colors flex flex-col"
     >
-      {/* Top colour strip */}
+      {/* Top gradient strip */}
       <div
+        className="h-2"
         style={{
-          height: 3,
-          background: config.borderColor,
+          background: `linear-gradient(to right, ${config.gradientFrom}, ${config.gradientTo})`,
         }}
       />
 
