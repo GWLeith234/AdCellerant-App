@@ -136,7 +136,7 @@ export function parseExcelWorkbook(file: File): Promise<{
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: "array" });
 
-        const booked = parseWoWTrackerSheet(workbook);
+        const booked = parseDealLogSheet(workbook);
         const targets = parseTargetsSheet(workbook);
         const sheetNames = workbook.SheetNames;
 
@@ -150,51 +150,71 @@ export function parseExcelWorkbook(file: File): Promise<{
   });
 }
 
+/** Map rep names from Deal Log to rep keys */
+const DEAL_LOG_REP_MAP: Record<string, string> = {
+  "george leith": "george",
+  "andy mcnab": "andy",
+  "alex kirkley": "alex",
+};
+
 /**
- * Parse "WoW Tracker" sheet for booked revenue.
+ * Parse "Deal Log" sheet for per-rep monthly booked revenue.
  *
- * Layout:
- *   Row 1 = headers (weeks or dates), last column with data = most recent week
- *   Rows 4-15 = months (Jan-Dec), col A = month label, values in data columns
+ * Layout (1-indexed):
+ *   Row 3 = headers
+ *   Rows 4-109 = data rows
+ *   Col A(0) = Date Entered
+ *   Col B(1) = Week #
+ *   Col C(2) = Month (text: "Jan", "Feb", "Mar", etc)
+ *   Col D(3) = Rep Name ("George Leith", "Andy McNab")
+ *   Col E(4) = Client Name
+ *   Col F(5) = Revenue Line
+ *   Col G(6) = Pipeline Stage ("Booked", "Forecast", etc)
+ *   Col H(7) = Probability %
+ *   Col I(8) = Total Deal Value ← KEY COLUMN
  *
- * We read the LAST data column for each month row to get most-recent booked amounts.
- * This gives us aggregate booked data (not per-rep). We'll store under a special
- * "_wow" key, but the main per-rep booked data comes from the CSV upload.
+ * Only rows where Pipeline Stage (col G) = "Booked" are included.
+ * Sums Total Deal Value (col I) grouped by rep + month.
  */
-function parseWoWTrackerSheet(workbook: XLSX.WorkBook): BookedByRepMonth {
+function parseDealLogSheet(workbook: XLSX.WorkBook): BookedByRepMonth {
   const booked: BookedByRepMonth = {};
-  const sheet = workbook.Sheets["WoW Tracker"];
+  const sheet = workbook.Sheets["Deal Log"];
   if (!sheet) return booked;
 
-  // Get sheet range
   const range = XLSX.utils.decode_range(sheet["!ref"] || "A1");
 
-  // Find last data column (last column in row 1 with data)
-  let lastDataCol = range.e.c;
-  while (lastDataCol > 0) {
-    const cell = sheet[XLSX.utils.encode_cell({ r: 0, c: lastDataCol })];
-    if (cell && cell.v !== undefined && cell.v !== "") break;
-    lastDataCol--;
-  }
-
-  // Rows 3-14 (0-indexed) = months Jan-Dec (rows 4-15 in 1-indexed)
-  for (let rowIdx = 3; rowIdx <= 14 && rowIdx <= range.e.r; rowIdx++) {
-    // Column A = month label
-    const labelCell = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: 0 })];
-    if (!labelCell) continue;
-    const monthLabel = String(labelCell.v || "").trim();
-    const month = normalizeMonth(monthLabel);
+  // Data rows start at row index 3 (1-indexed row 4)
+  for (let r = 3; r <= range.e.r; r++) {
+    // Col C (2) = Month
+    const monthCell = sheet[XLSX.utils.encode_cell({ r, c: 2 })];
+    if (!monthCell) continue;
+    const monthRaw = String(monthCell.v || "").trim();
+    const month = normalizeMonth(monthRaw);
     if (!month) continue;
 
-    // Read last data column value
-    const valCell = sheet[XLSX.utils.encode_cell({ r: rowIdx, c: lastDataCol })];
-    if (!valCell) continue;
-    const amount = typeof valCell.v === "number" ? valCell.v : parseFloat(String(valCell.v).replace(/[$,]/g, ""));
-    if (isNaN(amount) || amount === 0) continue;
+    // Col D (3) = Rep Name
+    const repCell = sheet[XLSX.utils.encode_cell({ r, c: 3 })];
+    if (!repCell) continue;
+    const repName = String(repCell.v || "").trim().toLowerCase();
+    const rep = DEAL_LOG_REP_MAP[repName];
+    if (!rep) continue;
 
-    // Store as George's booked (WoW Tracker tracks George's CA+V revenue)
-    if (!booked["george"]) booked["george"] = {};
-    booked["george"][month] = amount;
+    // Col G (6) = Pipeline Stage — only include "Booked"
+    const stageCell = sheet[XLSX.utils.encode_cell({ r, c: 6 })];
+    if (!stageCell) continue;
+    const stage = String(stageCell.v || "").trim().toLowerCase();
+    if (stage !== "booked") continue;
+
+    // Col I (8) = Total Deal Value
+    const valCell = sheet[XLSX.utils.encode_cell({ r, c: 8 })];
+    if (!valCell) continue;
+    const amount = typeof valCell.v === "number"
+      ? valCell.v
+      : parseFloat(String(valCell.v).replace(/[$,]/g, ""));
+    if (isNaN(amount)) continue;
+
+    if (!booked[rep]) booked[rep] = {};
+    booked[rep][month] = (booked[rep][month] || 0) + amount;
   }
 
   return booked;
@@ -203,14 +223,16 @@ function parseWoWTrackerSheet(workbook: XLSX.WorkBook): BookedByRepMonth {
 /**
  * Parse "Targets" sheet for monthly targets per rep.
  *
- * Layout: Raw cell grid with labeled sections.
- * We look for specific row labels in column A within the TARGET PLAN section
- * (NOT Board Plan, NOT Growth Plan — the middle section):
- *   - "George Leith — CA+V Total"
- *   - "Andy McNab — UK..."
- *   - "Alex Kirkley — UK..."
+ * TARGET PLAN section (1-indexed rows):
+ *   Row 10 = headers (Jan, Feb, Mar... in cols B-M)
+ *   Row 13 = CA+V (George's target)
+ *   Row 14 = UK (Andy's target)
  *
- * Columns B-M (indices 1-12) = Jan-Dec target amounts.
+ * Columns: B(1)=Jan, C(2)=Feb, D(3)=Mar, E(4)=Apr ... M(12)=Dec
+ *
+ * Values are treated as monthly (not cumulative) based on QA validation.
+ *
+ * Falls back to label-based scanning if fixed rows don't contain expected data.
  */
 function parseTargetsSheet(workbook: XLSX.WorkBook): TargetsByRepMonth {
   const targets: TargetsByRepMonth = {};
@@ -219,52 +241,58 @@ function parseTargetsSheet(workbook: XLSX.WorkBook): TargetsByRepMonth {
 
   const range = XLSX.utils.decode_range(sheet["!ref"] || "A1");
 
-  // Collect ALL occurrences of each rep across the entire sheet.
-  // The sheet has multiple sections (Board Plan, Target Plan, Growth Plan)
-  // each containing the same rep names. We want the TARGET PLAN rows,
-  // which are the SECOND occurrence of each rep name.
-  const repOccurrences: Record<string, number[]> = {
-    george: [],
-    andy: [],
-    alex: [],
-  };
-
-  for (let r = 0; r <= range.e.r; r++) {
-    const cell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
-    if (!cell) continue;
-    const label = String(cell.v || "").trim().toLowerCase();
-
-    if (label.includes("george leith") && label.includes("ca+v")) {
-      repOccurrences.george.push(r);
-    } else if (label.includes("andy mcnab")) {
-      repOccurrences.andy.push(r);
-    } else if (label.includes("alex kirkley")) {
-      repOccurrences.alex.push(r);
-    }
-  }
-
-  // Use the SECOND occurrence (Target Plan) for each rep.
-  // Fall back to first occurrence if only one exists.
-  const repRows: { rep: string; row: number }[] = [];
-  for (const [rep, rows] of Object.entries(repOccurrences)) {
-    if (rows.length === 0) continue;
-    // Second occurrence = Target Plan; first = Board Plan
-    const targetRow = rows.length >= 2 ? rows[1] : rows[0];
-    repRows.push({ rep, row: targetRow });
-  }
-
-  // Read monthly targets from columns B-M (indices 1-12) for each rep row
-  for (const { rep, row } of repRows) {
-    targets[rep] = {};
-
-    for (let c = 1; c <= 12; c++) {
+  // Helper: read a row of monthly values from cols B-M (indices 1-12)
+  function readMonthlyRow(row: number): Record<string, number> {
+    const monthly: Record<string, number> = {};
+    for (let c = 1; c <= 12 && c <= range.e.c; c++) {
       const month = ALL_MONTHS[c - 1];
       const cell = sheet[XLSX.utils.encode_cell({ r: row, c })];
       if (!cell) continue;
-
-      const val = typeof cell.v === "number" ? cell.v : parseFloat(String(cell.v).replace(/[$,]/g, ""));
+      const val = typeof cell.v === "number"
+        ? cell.v
+        : parseFloat(String(cell.v).replace(/[$,]/g, ""));
       if (!isNaN(val) && val > 0) {
-        targets[rep][month] = val;
+        monthly[month] = val;
+      }
+    }
+    return monthly;
+  }
+
+  // Try fixed rows first (0-indexed: row 12 = 1-indexed row 13 = CA+V, row 13 = UK)
+  const georgeRow = readMonthlyRow(12);
+  const andyRow = readMonthlyRow(13);
+
+  if (Object.keys(georgeRow).length > 0) {
+    targets["george"] = georgeRow;
+  }
+  if (Object.keys(andyRow).length > 0) {
+    targets["andy"] = andyRow;
+  }
+
+  // If fixed rows didn't work, fall back to label-based scanning
+  if (Object.keys(targets).length === 0) {
+    const repOccurrences: Record<string, number[]> = { george: [], andy: [], alex: [] };
+
+    for (let r = 0; r <= range.e.r; r++) {
+      const cell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
+      if (!cell) continue;
+      const label = String(cell.v || "").trim().toLowerCase();
+
+      if (label.includes("george leith") && label.includes("ca+v")) {
+        repOccurrences.george.push(r);
+      } else if (label.includes("andy mcnab")) {
+        repOccurrences.andy.push(r);
+      } else if (label.includes("alex kirkley")) {
+        repOccurrences.alex.push(r);
+      }
+    }
+
+    for (const [rep, rows] of Object.entries(repOccurrences)) {
+      if (rows.length === 0) continue;
+      const targetRow = rows.length >= 2 ? rows[1] : rows[0];
+      const monthly = readMonthlyRow(targetRow);
+      if (Object.keys(monthly).length > 0) {
+        targets[rep] = monthly;
       }
     }
   }
@@ -287,6 +315,23 @@ const DEAL_OWNER_MAP: Record<string, string> = {
   "78947458": "george",
   "80955316": "andy",
   "83471854": "alex",
+};
+
+/** Map human-readable owner names to owner IDs */
+const OWNER_NAME_TO_ID: Record<string, string> = {
+  "george leith": "78947458",
+  "andy mcnab": "80955316",
+  "alex kirkley": "83471854",
+};
+
+/** Map readable stage names to internal stage keys */
+const STAGE_NAME_TO_KEY: Record<string, string> = {
+  "qualification": "appointmentscheduled",
+  "needs analysis": "qualifiedtobuy",
+  "proposal": "presentationscheduled",
+  "negotiation": "decisionmakerboughtin",
+  "closed won": "closedwon",
+  "closed lost": "closedlost",
 };
 
 function formatValShort(val: number): string {
@@ -325,7 +370,7 @@ function findCol(row: Record<string, string>, ...candidates: string[]): string {
  *
  * Skips rows with missing required fields or unrecognized owner IDs.
  */
-export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
+export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[]; totalRows: number }> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
       header: true,
@@ -337,6 +382,7 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
           return;
         }
 
+        const totalRows = rows.length;
         const deals: ParsedDeal[] = [];
 
         for (const row of rows) {
@@ -344,11 +390,13 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
             const name = findCol(row, "DealName", "Deal Name", "Name");
             if (!name) continue; // skip rows without a deal name
 
-            const stageRaw = findCol(row, "DealStage", "Deal Stage", "Stage", "Pipeline Stage")
-              .toLowerCase().replace(/[^a-z0-9]/g, "");
-            const stageInfo = STAGE_MAP[stageRaw] || {
+            // Stage: try readable name mapping first, then raw key
+            const stageStr = findCol(row, "DealStage", "Deal Stage", "Stage", "Pipeline Stage");
+            const stageKey = STAGE_NAME_TO_KEY[stageStr.toLowerCase()] ||
+              stageStr.toLowerCase().replace(/[^a-z0-9]/g, "");
+            const stageInfo = STAGE_MAP[stageKey] || {
               category: "leads",
-              label: stageRaw || "Unknown",
+              label: stageStr || "Unknown",
               stageClass: "stage-lead",
             };
 
@@ -356,15 +404,41 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
             const amount = amountRaw ? parseFloat(amountRaw.replace(/[$,]/g, "")) : 0;
             const val = isNaN(amount) ? 0 : amount;
 
-            const closeDate = findCol(row, "CloseDate", "Close Date", "Close date");
+            // Filter: exclude $0 Closed Lost deals (dead leads)
+            if (val === 0 && stageKey === "closedlost") continue;
+
+            const closeDateRaw = findCol(row, "CloseDate", "Close Date", "Close date");
+            let closeDate = closeDateRaw;
+            if (closeDateRaw) {
+              const parsed = new Date(closeDateRaw);
+              if (!isNaN(parsed.getTime())) closeDate = parsed.toISOString();
+            }
+
+            // Owner: try ID first, then name
             const ownerId = findCol(row, "HubSpotOwnerID", "HubSpot Owner ID", "Owner ID", "OwnerID", "hubspot_owner_id");
+            const ownerName = findCol(row, "Deal owner", "Dealowner", "Owner", "Deal Owner");
+            const resolvedOwnerId = ownerId || OWNER_NAME_TO_ID[ownerName.toLowerCase()] || "";
+
             const dealId = findCol(row, "RecordID", "Record ID", "DealID", "Deal ID", "hs_object_id");
-            const company = findCol(row, "AssociatedCompany", "Associated Company", "Company", "Company Name", "CompanyName");
+            const company = findCol(
+              row,
+              "Associated Company (Primary)",
+              "AssociatedCompany",
+              "Associated Company",
+              "Company",
+              "Company Name",
+              "CompanyName"
+            );
             const persona = findCol(row, "Persona", "Deal Persona", "persona");
             const createDate = findCol(row, "CreateDate", "Create Date", "Create date", "Created");
 
-            // Determine rep from owner ID or company name
-            let rep = DEAL_OWNER_MAP[ownerId] || "";
+            // Determine rep from owner ID or owner name or company
+            let rep = DEAL_OWNER_MAP[resolvedOwnerId] || "";
+            if (!rep && ownerName) {
+              const nameKey = ownerName.toLowerCase();
+              const matchedId = OWNER_NAME_TO_ID[nameKey];
+              if (matchedId) rep = DEAL_OWNER_MAP[matchedId] || "";
+            }
             if (!rep && company.toLowerCase().includes("vendasta")) {
               rep = "vendasta";
             }
@@ -430,7 +504,7 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
           return;
         }
 
-        resolve(deals);
+        resolve({ deals, totalRows });
       },
       error(err) {
         reject(new Error(`CSV parse error: ${err.message}`));
