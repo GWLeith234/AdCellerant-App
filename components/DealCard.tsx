@@ -109,6 +109,20 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
   const health = dealHealthScore(deal);
   const warmth = dealWarmth(deal);
 
+  // Pure MEDDIC score: count confirmed fields out of 6
+  const meddicFields = [
+    deal.meddic.metrics,
+    deal.meddic.econBuyer,
+    deal.meddic.decisionCriteria,
+    deal.meddic.decisionProcess,
+    deal.meddic.identifyPain,
+    deal.meddic.champion,
+  ];
+  const meddicConfirmed = meddicFields.filter((v) => v === "ok").length;
+  const meddicAllGap = meddicFields.every((v) => v === "gap" || !v);
+  const meddicScore = Math.round((meddicConfirmed / 6) * 100);
+  const meddicColor = meddicScore >= 67 ? "#2ECC8A" : meddicScore >= 33 ? "#F5A623" : "#FF4A2D";
+
   return (
     <div
       onClick={onClick}
@@ -365,17 +379,16 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
               fontSize: 9,
               fontWeight: 700,
               fontFamily: "var(--font-orbitron, monospace)",
-              color:
-                health.status === "green" ? "#2ECC8A"
-                : health.status === "amber" ? "#F5A623"
-                : "#FF4A2D",
-              background:
-                health.status === "green" ? "rgba(46,204,138,0.1)"
-                : health.status === "amber" ? "rgba(245,166,35,0.1)"
+              color: meddicAllGap ? "#6B7F96" : meddicColor,
+              background: meddicAllGap
+                ? "rgba(107,127,150,0.1)"
+                : meddicScore >= 67 ? "rgba(46,204,138,0.1)"
+                : meddicScore >= 33 ? "rgba(245,166,35,0.1)"
                 : "rgba(255,74,45,0.1)",
               border: `0.5px solid ${
-                health.status === "green" ? "rgba(46,204,138,0.3)"
-                : health.status === "amber" ? "rgba(245,166,35,0.3)"
+                meddicAllGap ? "rgba(107,127,150,0.3)"
+                : meddicScore >= 67 ? "rgba(46,204,138,0.3)"
+                : meddicScore >= 33 ? "rgba(245,166,35,0.3)"
                 : "rgba(255,74,45,0.3)"
               }`,
               padding: "2px 5px",
@@ -383,7 +396,7 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
               width: "fit-content",
             }}
           >
-            MEDDIC {health.score}%
+            MEDDIC {meddicAllGap ? "—" : `${meddicScore}%`}
           </div>
           {showHealthTip && health.missing.length > 0 && (
             <div

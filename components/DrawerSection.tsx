@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface DrawerSectionProps {
   title: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  /** When true, forces the section open (overrides user toggle). Resets on deal change. */
+  forceOpen?: boolean;
 }
 
 export default function DrawerSection({
@@ -14,8 +16,16 @@ export default function DrawerSection({
   icon,
   children,
   defaultOpen = true,
+  forceOpen,
 }: DrawerSectionProps) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(forceOpen ?? defaultOpen);
+
+  // Sync with forceOpen when it changes (e.g. deal switch)
+  useEffect(() => {
+    if (forceOpen !== undefined) {
+      setOpen(forceOpen);
+    }
+  }, [forceOpen]);
 
   return (
     <div className="border-t border-border">
