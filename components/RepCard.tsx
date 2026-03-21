@@ -47,6 +47,9 @@ export default function RepCard({
   const marTarget = repTargets[currentMonth] || 0;
   const marAtt = marTarget > 0 ? Math.round((marBooked / marTarget) * 100) : 0;
 
+  // REV DEBUG — temporary: verify revenue numbers in Chrome DevTools
+  console.log("REV DEBUG:", { rep: config.key, monthBooked: marBooked, monthTarget: marTarget, attainment: marAtt });
+
   // Q1 booked (Jan + Feb + Mar)
   const q1Months = ["Jan", "Feb", "Mar"];
   const q1Booked = q1Months.reduce((sum, m) => sum + (repBooked[m] || 0), 0);

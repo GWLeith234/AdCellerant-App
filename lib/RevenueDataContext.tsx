@@ -34,8 +34,13 @@ function reducer(state: RevenueState, action: RevenueAction): RevenueState {
       return { ...state, bookedByRepMonth: action.booked };
     case "SET_TARGETS":
       return { ...state, targetsByRepMonth: action.targets };
-    case "MERGE_BOOKED":
-      return { ...state, bookedByRepMonth: { ...state.bookedByRepMonth, ...action.booked } };
+    case "MERGE_BOOKED": {
+      const merged = { ...state.bookedByRepMonth };
+      for (const [rep, months] of Object.entries(action.booked)) {
+        merged[rep] = { ...(merged[rep] || {}), ...months };
+      }
+      return { ...state, bookedByRepMonth: merged };
+    }
     case "SET_DATA_SOURCE":
       return { ...state, dataSource: action.source };
     case "SET_CSV_UPLOADED_AT":

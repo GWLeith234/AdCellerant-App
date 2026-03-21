@@ -151,9 +151,14 @@ export default function DataUploadPanel({
     if (xlFile) {
       try {
         const result = await parseExcelWorkbook(xlFile);
-        booked = booked
-          ? { ...booked, ...result.booked }
-          : result.booked;
+        if (booked) {
+          // Deep merge at month level so CSV per-rep data isn't overwritten
+          for (const [rep, months] of Object.entries(result.booked)) {
+            booked[rep] = { ...(booked[rep] || {}), ...months };
+          }
+        } else {
+          booked = result.booked;
+        }
         targets = result.targets;
         setXlState("loaded");
         setXlLoadedName(xlFile.name);
