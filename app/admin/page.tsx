@@ -174,6 +174,21 @@ export default function AdminPage() {
     return owners.size;
   }, [uploadedDeals, hasUploadedDeals]);
 
+  // Deal counts per rep for diagnostics
+  const dealsByRep = useMemo(() => {
+    if (!hasUploadedDeals) return {};
+    const counts: Record<string, { count: number; pipeline: number }> = {};
+    for (const d of uploadedDeals) {
+      if (!counts[d.rep]) counts[d.rep] = { count: 0, pipeline: 0 };
+      counts[d.rep].count++;
+      // Pipeline = open deals only (exclude closed won/lost)
+      if (d.cat !== "cw" && d.cat !== "cl") {
+        counts[d.rep].pipeline += d.val;
+      }
+    }
+    return counts;
+  }, [uploadedDeals, hasUploadedDeals]);
+
   // Handle process button
   const handleProcess = useCallback(async () => {
     if (!csvFile && !xlFile) return;
@@ -532,9 +547,16 @@ export default function AdminPage() {
                 {/* Raw parsing info */}
                 <div style={{ marginTop: 16, fontFamily: "monospace", fontSize: 11, color: "#6B7F96" }}>
                   {hasUploadedDeals && (
-                    <p style={{ margin: "2px 0" }}>
-                      CSV parsed: {uploadedDeals.length} deals across {dealOwnerCounts} owners
-                    </p>
+                    <>
+                      <p style={{ margin: "2px 0" }}>
+                        CSV parsed: {uploadedDeals.length} deals across {dealOwnerCounts} owners
+                      </p>
+                      {Object.entries(dealsByRep).map(([rep, data]) => (
+                        <p key={rep} style={{ margin: "2px 0", paddingLeft: 12 }}>
+                          {rep}: {data.count} deals · {formatShort(data.pipeline)} pipeline
+                        </p>
+                      ))}
+                    </>
                   )}
                   {xlSheetNames.length > 0 && (
                     <p style={{ margin: "2px 0" }}>

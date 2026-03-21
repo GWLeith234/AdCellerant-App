@@ -317,6 +317,13 @@ const DEAL_OWNER_MAP: Record<string, string> = {
   "83471854": "alex",
 };
 
+/** Map owner names directly to rep keys (bypasses ID lookup) */
+const OWNER_NAME_TO_REP: Record<string, string> = {
+  "george leith": "george",
+  "andy mcnab": "andy",
+  "alex kirkley": "alex",
+};
+
 /** Map human-readable owner names to owner IDs */
 const OWNER_NAME_TO_ID: Record<string, string> = {
   "george leith": "78947458",
@@ -414,10 +421,10 @@ export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[];
               if (!isNaN(parsed.getTime())) closeDate = parsed.toISOString();
             }
 
-            // Owner: try ID first, then name
-            const ownerId = findCol(row, "HubSpotOwnerID", "HubSpot Owner ID", "Owner ID", "OwnerID", "hubspot_owner_id");
-            const ownerName = findCol(row, "Deal owner", "Dealowner", "Owner", "Deal Owner");
-            const resolvedOwnerId = ownerId || OWNER_NAME_TO_ID[ownerName.toLowerCase()] || "";
+            // Owner: prefer name-based resolution (more reliable in CSV exports)
+            // HubSpot CSV "HubSpot Owner Id" column can contain portal owner, not deal owner
+            const ownerName = findCol(row, "Deal owner", "Dealowner", "Deal Owner");
+            const ownerId = findCol(row, "HubSpotOwnerID", "HubSpot Owner ID", "hubspot_owner_id");
 
             const dealId = findCol(row, "RecordID", "Record ID", "DealID", "Deal ID", "hs_object_id");
             const company = findCol(
@@ -432,13 +439,20 @@ export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[];
             const persona = findCol(row, "Persona", "Deal Persona", "persona");
             const createDate = findCol(row, "CreateDate", "Create Date", "Create date", "Created");
 
-            // Determine rep from owner ID or owner name or company
-            let rep = DEAL_OWNER_MAP[resolvedOwnerId] || "";
-            if (!rep && ownerName) {
-              const nameKey = ownerName.toLowerCase();
-              const matchedId = OWNER_NAME_TO_ID[nameKey];
-              if (matchedId) rep = DEAL_OWNER_MAP[matchedId] || "";
+            // Determine rep: name first → ID fallback → company fallback
+            let rep = "";
+
+            // 1. Owner name → direct rep mapping (most reliable for CSV)
+            if (ownerName) {
+              rep = OWNER_NAME_TO_REP[ownerName.trim().toLowerCase()] || "";
             }
+
+            // 2. Fall back to owner ID mapping
+            if (!rep && ownerId) {
+              rep = DEAL_OWNER_MAP[ownerId.trim()] || "";
+            }
+
+            // 3. Fall back to company name detection
             if (!rep && company.toLowerCase().includes("vendasta")) {
               rep = "vendasta";
             }
@@ -503,6 +517,22 @@ export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[];
           reject(new Error("No valid deals found in CSV — check column headers"));
           return;
         }
+
+        // Debug: log deal owner distribution
+        const repCounts: Record<string, number> = {};
+        for (const d of deals) {
+          repCounts[d.rep] = (repCounts[d.rep] || 0) + 1;
+        }
+        console.log("DEAL OWNER DEBUG:", {
+          totalParsed: deals.length,
+          totalRows,
+          byRep: repCounts,
+          sample: deals.slice(0, 5).map((d) => ({
+            name: d.name,
+            rep: d.rep,
+            val: d.val,
+          })),
+        });
 
         resolve({ deals, totalRows });
       },

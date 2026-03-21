@@ -35,7 +35,9 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {REP_CONFIGS.map((config) => {
           const repDeals = deals.filter((d) => d.rep === config.key);
-          const pipelineVal = repDeals.reduce((sum, d) => sum + d.val, 0);
+          const pipelineVal = repDeals
+            .filter((d) => d.cat !== "cw" && d.cat !== "cl")
+            .reduce((sum, d) => sum + d.val, 0);
           return (
             <RepCard
               key={config.key}
