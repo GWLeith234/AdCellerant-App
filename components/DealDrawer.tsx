@@ -280,7 +280,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed top-[90px] right-0 h-[calc(100vh-90px)] w-full sm:w-[480px] bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
+      <div className="fixed top-[80px] right-0 h-[calc(100vh-80px)] w-full sm:w-[480px] bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
         {/* Breadcrumb bar */}
         <div
           style={{
