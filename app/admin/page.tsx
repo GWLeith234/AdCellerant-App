@@ -1,8 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import Topbar from "@/components/Topbar";
 import { useRevenueData } from "@/lib/RevenueDataContext";
 import { useDealData } from "@/lib/DealDataContext";
@@ -10,12 +8,6 @@ import { REP_CONFIGS } from "@/lib/reps";
 import { REP_PHOTOS } from "@/lib/repPhotos";
 import { parseBookedCSV, parseExcelWorkbook, parseHubSpotDealsCSV } from "@/lib/parsers";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
-
-const ALLOWED_EMAILS = [
-  "george.leith@adcellerant.com",
-  "andy.mcnab@adcellerant.com",
-  "alex.kirkley@adcellerant.com",
-];
 
 const REP_OWNER_IDS: Record<string, string> = {
   george: "78947458",
@@ -127,8 +119,6 @@ function DropZone({
 /* ── Admin Page ───────────────────────────────────────── */
 
 export default function AdminPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
   const {
     loadRevenueData,
     resetRevenueData,
@@ -158,12 +148,7 @@ export default function AdminPage() {
   const [processResult, setProcessResult] = useState<string | null>(null);
   const [processError, setProcessError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-  }, [status, router]);
-
-  const userEmail = session?.user?.email?.toLowerCase() || "";
-  const isAllowed = ALLOWED_EMAILS.includes(userEmail) || !session;
+  // No auth gate — /admin is publicly accessible
 
   const currentMonth = new Date().toLocaleString("en-US", { month: "short" });
 
@@ -272,28 +257,7 @@ export default function AdminPage() {
     setProcessing(false);
   }, [csvFile, xlFile, loadRevenueData, loadUploadedDeals, setCsvUploadedAt, setExcelUploadedAt]);
 
-  if (status === "loading") {
-    return (
-      <div style={{ minHeight: "100vh", background: "#0D1B2E" }}>
-        <Topbar />
-        <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px" }}>
-          <p style={{ color: "#6B7F96", fontSize: 14 }}>Loading...</p>
-        </main>
-      </div>
-    );
-  }
-
-  if (status === "unauthenticated") return null;
-  if (session && !isAllowed) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#0D1B2E" }}>
-        <Topbar />
-        <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px" }}>
-          <p style={{ color: "#FF4A2D", fontSize: 14 }}>Access denied. Admin only.</p>
-        </main>
-      </div>
-    );
-  }
+  // No loading/auth gates — page renders immediately
 
   const hasStaged = !!csvFile || !!xlFile;
 
