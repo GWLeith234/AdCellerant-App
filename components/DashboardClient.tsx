@@ -118,6 +118,13 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     loadDeals();
   }, [loadDeals]);
 
+  // Listen for refresh events from Topbar
+  useEffect(() => {
+    const handler = () => loadDeals(true);
+    window.addEventListener("adcellerant:refresh", handler);
+    return () => window.removeEventListener("adcellerant:refresh", handler);
+  }, [loadDeals]);
+
   // Use uploaded deals if available, otherwise fall back to API-loaded deals
   const activeDeals = hasUploadedDeals ? uploadedDeals : state.deals;
   const isMock = hasUploadedDeals ? false : state.hubspotUnavailable;
