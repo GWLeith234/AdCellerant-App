@@ -14,15 +14,25 @@ export default function FlagBadge({ country, size = 20 }: FlagBadgeProps) {
         viewBox="0 0 40 40"
         className="absolute -bottom-1 -right-1"
       >
-        <circle cx="20" cy="20" r="19" fill="#FF0000" stroke="#0D1B2E" strokeWidth="2" />
-        <circle cx="20" cy="20" r="15" fill="white" />
-        {/* Maple leaf polygon */}
-        <polygon
-          fill="#FF0000"
-          points="20,8 21.5,14 24,13 22.5,16 26,16 23,18.5 24.5,20 20,17.5 15.5,20 17,18.5 14,16 17.5,16 16,13 18.5,14"
-        />
-        {/* Stem */}
-        <rect x="19" y="17.5" width="2" height="6" fill="#FF0000" />
+        <defs>
+          <clipPath id="ca-clip">
+            <circle cx="20" cy="20" r="18" />
+          </clipPath>
+        </defs>
+        <circle cx="20" cy="20" r="19" fill="white" stroke="#0D1B2E" strokeWidth="2" />
+        <g clipPath="url(#ca-clip)">
+          {/* Red left bar */}
+          <rect x="2" y="2" width="10" height="36" fill="#FF0000" />
+          {/* Red right bar */}
+          <rect x="28" y="2" width="10" height="36" fill="#FF0000" />
+          {/* White center is the circle fill */}
+          {/* Maple leaf */}
+          <path
+            fill="#FF0000"
+            d="M20,10 L21,14 L24,12.5 L22.5,15.5 L26.5,16 L23.5,18 L25,20 L20,17 L15,20 L16.5,18 L13.5,16 L17.5,15.5 L16,12.5 L19,14 Z"
+          />
+          <rect x="19" y="17" width="2" height="7" fill="#FF0000" rx="0.5" />
+        </g>
       </svg>
     );
   }
