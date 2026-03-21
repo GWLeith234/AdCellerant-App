@@ -140,6 +140,7 @@ export default function AdminPage() {
   // Display state
   const [csvLoadedName, setCsvLoadedName] = useState<string | null>(null);
   const [csvDealCount, setCsvDealCount] = useState<number>(0);
+  const [csvTotalRows, setCsvTotalRows] = useState<number>(0);
   const [xlLoadedName, setXlLoadedName] = useState<string | null>(null);
   const [xlSheetNames, setXlSheetNames] = useState<string[]>([]);
 
@@ -190,10 +191,11 @@ export default function AdminPage() {
     // Process HubSpot CSV (deals)
     if (csvFile) {
       try {
-        const parsedDeals = await parseHubSpotDealsCSV(csvFile);
+        const { deals: parsedDeals, totalRows } = await parseHubSpotDealsCSV(csvFile);
         dealCount = parsedDeals.length;
         setCsvLoadedName(csvFile.name);
         setCsvDealCount(dealCount);
+        setCsvTotalRows(totalRows);
         setCsvFile(null);
         setCsvUploadedAt(new Date().toISOString());
         loadUploadedDeals(parsedDeals);
@@ -325,7 +327,7 @@ export default function AdminPage() {
                   onFile={(file) => setCsvFile(file)}
                   loadedInfo={
                     csvLoadedName
-                      ? `✓ ${csvLoadedName} — ${csvDealCount} deals loaded`
+                      ? `✓ ${csvLoadedName} — ${csvTotalRows} rows parsed, ${csvDealCount} active deals loaded`
                       : csvFile
                       ? `📎 ${csvFile.name} (staged)`
                       : null
@@ -436,6 +438,7 @@ export default function AdminPage() {
                   resetUploadedDeals();
                   setCsvLoadedName(null);
                   setCsvDealCount(0);
+                  setCsvTotalRows(0);
                   setXlLoadedName(null);
                   setXlSheetNames([]);
                   setProcessResult(null);

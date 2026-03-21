@@ -176,7 +176,7 @@ export default function DataUploadPanel({
     // Process HubSpot deals CSV if staged
     if (dealsFile) {
       try {
-        const parsedDeals = await parseHubSpotDealsCSV(dealsFile);
+        const { deals: parsedDeals } = await parseHubSpotDealsCSV(dealsFile);
         setDealsState("loaded");
         setDealsLoadedName(dealsFile.name);
         setDealsStagedName(null);

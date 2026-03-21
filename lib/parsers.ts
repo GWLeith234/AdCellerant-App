@@ -289,6 +289,23 @@ const DEAL_OWNER_MAP: Record<string, string> = {
   "83471854": "alex",
 };
 
+/** Map human-readable owner names to owner IDs */
+const OWNER_NAME_TO_ID: Record<string, string> = {
+  "george leith": "78947458",
+  "andy mcnab": "80955316",
+  "alex kirkley": "83471854",
+};
+
+/** Map readable stage names to internal stage keys */
+const STAGE_NAME_TO_KEY: Record<string, string> = {
+  "qualification": "appointmentscheduled",
+  "needs analysis": "qualifiedtobuy",
+  "proposal": "presentationscheduled",
+  "negotiation": "decisionmakerboughtin",
+  "closed won": "closedwon",
+  "closed lost": "closedlost",
+};
+
 function formatValShort(val: number): string {
   if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
   if (val >= 1_000) return `$${(val / 1_000).toFixed(1)}K`;
@@ -325,7 +342,7 @@ function findCol(row: Record<string, string>, ...candidates: string[]): string {
  *
  * Skips rows with missing required fields or unrecognized owner IDs.
  */
-export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
+export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[]; totalRows: number }> {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
       header: true,
@@ -337,6 +354,7 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
           return;
         }
 
+        const totalRows = rows.length;
         const deals: ParsedDeal[] = [];
 
         for (const row of rows) {
@@ -344,11 +362,13 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
             const name = findCol(row, "DealName", "Deal Name", "Name");
             if (!name) continue; // skip rows without a deal name
 
-            const stageRaw = findCol(row, "DealStage", "Deal Stage", "Stage", "Pipeline Stage")
-              .toLowerCase().replace(/[^a-z0-9]/g, "");
-            const stageInfo = STAGE_MAP[stageRaw] || {
+            // Stage: try readable name mapping first, then raw key
+            const stageStr = findCol(row, "DealStage", "Deal Stage", "Stage", "Pipeline Stage");
+            const stageKey = STAGE_NAME_TO_KEY[stageStr.toLowerCase()] ||
+              stageStr.toLowerCase().replace(/[^a-z0-9]/g, "");
+            const stageInfo = STAGE_MAP[stageKey] || {
               category: "leads",
-              label: stageRaw || "Unknown",
+              label: stageStr || "Unknown",
               stageClass: "stage-lead",
             };
 
@@ -356,15 +376,41 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
             const amount = amountRaw ? parseFloat(amountRaw.replace(/[$,]/g, "")) : 0;
             const val = isNaN(amount) ? 0 : amount;
 
-            const closeDate = findCol(row, "CloseDate", "Close Date", "Close date");
+            // Filter: exclude $0 Closed Lost deals (dead leads)
+            if (val === 0 && stageKey === "closedlost") continue;
+
+            const closeDateRaw = findCol(row, "CloseDate", "Close Date", "Close date");
+            let closeDate = closeDateRaw;
+            if (closeDateRaw) {
+              const parsed = new Date(closeDateRaw);
+              if (!isNaN(parsed.getTime())) closeDate = parsed.toISOString();
+            }
+
+            // Owner: try ID first, then name
             const ownerId = findCol(row, "HubSpotOwnerID", "HubSpot Owner ID", "Owner ID", "OwnerID", "hubspot_owner_id");
+            const ownerName = findCol(row, "Deal owner", "Dealowner", "Owner", "Deal Owner");
+            const resolvedOwnerId = ownerId || OWNER_NAME_TO_ID[ownerName.toLowerCase()] || "";
+
             const dealId = findCol(row, "RecordID", "Record ID", "DealID", "Deal ID", "hs_object_id");
-            const company = findCol(row, "AssociatedCompany", "Associated Company", "Company", "Company Name", "CompanyName");
+            const company = findCol(
+              row,
+              "Associated Company (Primary)",
+              "AssociatedCompany",
+              "Associated Company",
+              "Company",
+              "Company Name",
+              "CompanyName"
+            );
             const persona = findCol(row, "Persona", "Deal Persona", "persona");
             const createDate = findCol(row, "CreateDate", "Create Date", "Create date", "Created");
 
-            // Determine rep from owner ID or company name
-            let rep = DEAL_OWNER_MAP[ownerId] || "";
+            // Determine rep from owner ID or owner name or company
+            let rep = DEAL_OWNER_MAP[resolvedOwnerId] || "";
+            if (!rep && ownerName) {
+              const nameKey = ownerName.toLowerCase();
+              const matchedId = OWNER_NAME_TO_ID[nameKey];
+              if (matchedId) rep = DEAL_OWNER_MAP[matchedId] || "";
+            }
             if (!rep && company.toLowerCase().includes("vendasta")) {
               rep = "vendasta";
             }
@@ -430,7 +476,7 @@ export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
           return;
         }
 
-        resolve(deals);
+        resolve({ deals, totalRows });
       },
       error(err) {
         reject(new Error(`CSV parse error: ${err.message}`));
