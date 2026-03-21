@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import type { ParsedDeal } from "@/lib/hubspot";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
 import { REP_CONFIGS } from "@/lib/reps";
 import RepCard from "./RepCard";
-import TabBar, { type Tab } from "./TabBar";
-import DealGrid from "./DealGrid";
+import PipelineView from "./PipelineView";
 
 interface TeamGridProps {
   deals: ParsedDeal[];
@@ -16,45 +15,11 @@ interface TeamGridProps {
   onResearchClick?: (deal: ParsedDeal) => void;
 }
 
-type TabKey = "all" | "neg" | "prop" | "ent" | "leads";
-
 export default function TeamGrid({ deals, booked, targets, onDealClick, onResearchClick }: TeamGridProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [selectedRep, setSelectedRep] = useState<string | null>(null);
 
   // Current month label (short name)
   const currentMonth = new Date().toLocaleString("en-US", { month: "short" });
-
-  // Filter deals by selected rep
-  const repFilteredDeals = useMemo(() => {
-    if (!selectedRep) return deals;
-    return deals.filter((d) => d.rep === selectedRep);
-  }, [deals, selectedRep]);
-
-  // Counts per category (based on rep-filtered deals)
-  const counts = useMemo(() => {
-    const c = { all: repFilteredDeals.length, neg: 0, prop: 0, ent: 0, leads: 0 };
-    for (const d of repFilteredDeals) {
-      if (d.cat === "neg") c.neg++;
-      else if (d.cat === "prop") c.prop++;
-      else if (d.cat === "ent") c.ent++;
-      else if (d.cat === "leads") c.leads++;
-    }
-    return c;
-  }, [repFilteredDeals]);
-
-  const tabs: Tab[] = [
-    { key: "all", label: "All Deals", count: counts.all },
-    { key: "neg", label: "Negotiation", count: counts.neg },
-    { key: "prop", label: "Proposal", count: counts.prop },
-    { key: "ent", label: "High Value", count: counts.ent },
-    { key: "leads", label: "Leads", count: counts.leads },
-  ];
-
-  const filteredDeals = useMemo(() => {
-    if (activeTab === "all") return repFilteredDeals;
-    return repFilteredDeals.filter((d) => d.cat === activeTab);
-  }, [repFilteredDeals, activeTab]);
 
   const selectedRepConfig = selectedRep
     ? REP_CONFIGS.find((r) => r.key === selectedRep)
@@ -62,7 +27,6 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
 
   const handleRepSelect = (key: string) => {
     setSelectedRep((prev) => (prev === key ? null : key));
-    setActiveTab("all");
   };
 
   return (
@@ -114,17 +78,13 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
         </div>
       )}
 
-      {/* Deal tabs + grid */}
-      <div className="mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <TabBar
-            tabs={tabs}
-            active={activeTab}
-            onSelect={(key) => setActiveTab(key as TabKey)}
-          />
-        </div>
-        <DealGrid deals={filteredDeals} columns={4} onDealClick={onDealClick} onResearchClick={onResearchClick} />
-      </div>
+      {/* Pipeline tabs + deal grid */}
+      <PipelineView
+        deals={deals}
+        repFilter={selectedRep || undefined}
+        onDealClick={onDealClick}
+        onResearchClick={onResearchClick}
+      />
     </div>
   );
 }
