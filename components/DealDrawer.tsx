@@ -381,12 +381,53 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed top-0 right-0 h-full w-full sm:w-[480px] bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
+      <div className="fixed top-[90px] right-0 h-[calc(100vh-90px)] w-full sm:w-[480px] bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
+        {/* Breadcrumb bar */}
+        <div
+          style={{
+            height: 36,
+            minHeight: 36,
+            background: "#162236",
+            borderBottom: "1px solid #2A3F5C",
+            padding: "0 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#4FA3D1",
+              fontSize: 12,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              padding: 0,
+            }}
+          >
+            ← Back to deals
+          </button>
+          <span
+            style={{
+              fontSize: 12,
+              color: "#6B7F96",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {deal.name}{deal.sub ? ` — ${deal.sub}` : ""}
+          </span>
+        </div>
+
         {/* Close button */}
         <button
           aria-label="Close"
           onClick={onClose}
-          className="fixed top-[96px] sm:top-4 right-4 z-[150] min-w-[44px] min-h-[44px] w-11 h-11 sm:w-8 sm:h-8 rounded-lg bg-navy/50 hover:bg-navy flex items-center justify-center text-muted hover:text-white transition-colors"
+          className="absolute top-[44px] sm:top-[44px] right-4 z-[150] min-w-[44px] min-h-[44px] w-11 h-11 sm:w-8 sm:h-8 rounded-lg bg-navy/50 hover:bg-navy flex items-center justify-center text-muted hover:text-white transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
