@@ -427,7 +427,7 @@ export default function Topbar() {
           </button>
         )}
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent("adcellerant:refresh"))}
+          onClick={() => window.location.reload()}
           style={navBtnStyle}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}

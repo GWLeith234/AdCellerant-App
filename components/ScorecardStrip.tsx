@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { RepConfig } from "@/lib/reps";
 import { REP_PHOTOS } from "@/lib/repPhotos";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
@@ -19,7 +18,6 @@ const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep
 const GEORGE_ANNUAL_TARGET = 1_500_000;
 
 export default function ScorecardStrip({ config, booked, targets }: ScorecardStripProps) {
-  const router = useRouter();
   const repBooked = booked[config.key] || {};
   const repTargets = targets[config.key] || {};
   const isRamp = config.isRamp;
@@ -53,16 +51,6 @@ export default function ScorecardStrip({ config, booked, targets }: ScorecardStr
     <div className="space-y-4">
       {/* Header strip: photo + name + back button */}
       <div className="flex items-center gap-4">
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="text-muted hover:text-white text-sm transition-colors flex items-center gap-1 flex-shrink-0"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          All reps
-        </button>
-
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
             <div
