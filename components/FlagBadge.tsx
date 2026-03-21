@@ -8,32 +8,30 @@ interface FlagBadgeProps {
 export default function FlagBadge({ country, size = 20 }: FlagBadgeProps) {
   if (country === "ca") {
     return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 40 40"
+      <div
         className="absolute -bottom-1 -right-1"
+        style={{
+          width: size + 2,
+          height: size + 2,
+          borderRadius: "50%",
+          overflow: "hidden",
+          border: "2px solid #0D1B2E",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#fff",
+        }}
       >
-        <defs>
-          <clipPath id="ca-clip">
-            <circle cx="20" cy="20" r="18" />
-          </clipPath>
-        </defs>
-        <circle cx="20" cy="20" r="19" fill="white" stroke="#0D1B2E" strokeWidth="2" />
-        <g clipPath="url(#ca-clip)">
-          {/* Red left bar */}
-          <rect x="2" y="2" width="10" height="36" fill="#FF0000" />
-          {/* Red right bar */}
-          <rect x="28" y="2" width="10" height="36" fill="#FF0000" />
-          {/* White center is the circle fill */}
-          {/* Maple leaf */}
+        <svg viewBox="0 0 40 20" width={size + 6} height={(size + 6) / 2}>
+          <rect x="0" y="0" width="10" height="20" fill="#FF0000" />
+          <rect x="10" y="0" width="20" height="20" fill="#FFFFFF" />
+          <rect x="30" y="0" width="10" height="20" fill="#FF0000" />
           <path
+            d="M20 3.5 L21 7 L18.5 8.5 L19.5 9 L18 12 L19 12 L18.5 14.5 L20 13.5 L21.5 14.5 L21 12 L22 12 L20.5 9 L21.5 8.5 L19 7 Z"
             fill="#FF0000"
-            d="M20,10 L21,14 L24,12.5 L22.5,15.5 L26.5,16 L23.5,18 L25,20 L20,17 L15,20 L16.5,18 L13.5,16 L17.5,15.5 L16,12.5 L19,14 Z"
           />
-          <rect x="19" y="17" width="2" height="7" fill="#FF0000" rx="0.5" />
-        </g>
-      </svg>
+        </svg>
+      </div>
     );
   }
 
