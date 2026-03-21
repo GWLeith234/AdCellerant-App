@@ -299,11 +299,9 @@ export default function Topbar() {
   const [cityDates, setCityDates] = useState({ denver: "", saskatoon: "", london: "" });
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session } = useSession();
+  useSession(); // keep hook call for auth context
   const { csvUploadedAt, excelUploadedAt } = useRevenueData();
 
-  const userEmail = session?.user?.email || "";
-  const isAdmin = userEmail === "george.leith@adcellerant.com";
   const isOnDashboard = pathname === "/dashboard" || pathname === "/";
 
   useEffect(() => {
@@ -351,7 +349,7 @@ export default function Topbar() {
   return (
     <header
       style={{
-        height: 90,
+        height: 80,
         background: "#0B1624",
         borderBottom: "0.5px solid #1E3A5F",
         display: "flex",
@@ -429,23 +427,21 @@ export default function Topbar() {
           </button>
         )}
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent("adcellerant:refresh"))}
+          onClick={() => window.location.reload()}
           style={navBtnStyle}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
         >
           ↻ Refresh
         </button>
-        {isAdmin && (
-          <button
-            onClick={() => router.push("/admin")}
-            style={navBtnStyle}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
-          >
-            ⚙ Admin
-          </button>
-        )}
+        <button
+          onClick={() => router.push("/admin")}
+          style={navBtnStyle}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
+        >
+          ⚙ Admin
+        </button>
       </div>
 
       {/* Divider */}
@@ -503,43 +499,32 @@ export default function Topbar() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "flex-end",
-              paddingBottom: 5,
+              paddingBottom: 4,
               overflow: "hidden",
             }}
           >
-            <city.Skyline />
+            <div style={{ maxHeight: 40, overflow: "hidden" }}>
+              <city.Skyline />
+            </div>
             <span
               style={{
                 fontFamily: orb,
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: 700,
                 color: "#FF4A2D",
-                letterSpacing: 2,
+                letterSpacing: 1.5,
                 textTransform: "uppercase",
-                marginTop: 2,
+                marginTop: 1,
               }}
             >
               {city.label}
             </span>
-            <span
-              style={{
-                fontFamily: orb,
-                fontSize: 16,
-                fontWeight: 600,
-                color: "#F0F4F8",
-                letterSpacing: 1,
-              }}
-            >
-              {city.time}
-            </span>
-            <span
-              style={{
-                fontFamily: orb,
-                fontSize: 11,
-                color: "#6B7F96",
-              }}
-            >
-              {city.date}
+            <span style={{ fontFamily: orb, lineHeight: 1.2 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#F0F4F8" }}>
+                {city.time.slice(0, 5)}
+              </span>
+              <span style={{ fontSize: 13, color: "#6B7F96" }}> · </span>
+              <span style={{ fontSize: 13, color: "#6B7F96" }}>{city.date}</span>
             </span>
           </div>
         ))}

@@ -27,25 +27,11 @@ const TONE_OPTIONS = [
 
 type ToneKey = (typeof TONE_OPTIONS)[number]["key"];
 
-interface LogOp {
-  type: string;
-  field: string;
-  currentValue: string;
-  newValue: string;
-  hubspotProperty: string | null;
-  hubspotValue: string;
-}
-
 // Section icons as inline SVGs
 const IconAction = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
     <path d="M7 1v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5"/>
-  </svg>
-);
-const IconLog = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-    <path d="M2 3h10M2 7h10M2 11h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 const IconEmail = (
@@ -82,17 +68,8 @@ const IconDetails = (
 );
 
 export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
-  // --- Log to HubSpot state ---
-  const [logText, setLogText] = useState("");
-  const [logOps, setLogOps] = useState<LogOp[] | null>(null);
-  const [logSummary, setLogSummary] = useState("");
-  const [logStatus, setLogStatus] = useState<"idle" | "parsing" | "saving" | "saved" | "error">("idle");
-  const [logError, setLogError] = useState<string | null>(null);
-  const [stageWarning, setStageWarning] = useState<{
-    score: number;
-    missing: string[];
-    message: string;
-  } | null>(null);
+  // --- No phone toast ---
+  const [noPhoneToast, setNoPhoneToast] = useState(false);
 
   // --- Draft email state ---
   const [emailTone, setEmailTone] = useState<ToneKey>("warm");
@@ -124,12 +101,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
   // Reset all states when deal changes
   useEffect(() => {
-    setLogText("");
-    setLogOps(null);
-    setLogSummary("");
-    setLogStatus("idle");
-    setLogError(null);
-    setStageWarning(null);
+    setNoPhoneToast(false);
     setEmailTone("warm");
     setEmailSubject("");
     setEmailBody("");
@@ -168,79 +140,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       document.body.style.overflow = "";
     };
   }, [deal, onClose, showResearch]);
-
-  // --- Parse & Preview ---
-  const handleParsePreview = useCallback(async () => {
-    if (!logText.trim() || !deal) return;
-    setLogStatus("parsing");
-    setLogError(null);
-    try {
-      const res = await fetch("/api/ai/parse-log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: logText, deal }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        const msg = data.error?.includes("not configured")
-          ? "AI features require ANTHROPIC_API_KEY to be set in Railway. Contact George to configure."
-          : data.error || "Parse failed";
-        throw new Error(msg);
-      }
-      setLogOps(data.ops || []);
-      setLogSummary(data.summary || "");
-      setStageWarning(data.warning || null);
-      setLogStatus("idle");
-    } catch (err) {
-      setLogError(err instanceof Error ? err.message : "Parse failed");
-      setLogStatus("error");
-    }
-  }, [logText, deal]);
-
-  // --- Confirm & execute ---
-  const handleConfirmLog = useCallback(async () => {
-    if (!deal || !logOps) return;
-    setLogStatus("saving");
-    setLogError(null);
-    try {
-      const propUpdates: Record<string, string> = {};
-      const notes: string[] = [];
-
-      for (const op of logOps) {
-        if (op.type === "add_note") {
-          notes.push(op.hubspotValue);
-        } else if (op.hubspotProperty) {
-          propUpdates[op.hubspotProperty] = op.hubspotValue;
-        }
-      }
-
-      if (Object.keys(propUpdates).length > 0) {
-        const patchRes = await fetch(`/api/hubspot/deal/${deal.id}/update`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ properties: propUpdates }),
-        });
-        if (!patchRes.ok) throw new Error("Failed to update deal properties");
-      }
-
-      for (const note of notes) {
-        const noteRes = await fetch(`/api/hubspot/deal/${deal.id}/note`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ note }),
-        });
-        if (!noteRes.ok) throw new Error("Failed to add note");
-      }
-
-      setLogStatus("saved");
-      setLogText("");
-      setLogOps(null);
-      setLogSummary("");
-    } catch (err) {
-      setLogError(err instanceof Error ? err.message : "Save failed");
-      setLogStatus("error");
-    }
-  }, [deal, logOps]);
 
   // --- Generate email ---
   const handleGenerateEmail = useCallback(async () => {
@@ -381,12 +280,53 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       <div className="fixed inset-0 bg-black/60 z-40" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed top-0 right-0 h-full w-full sm:w-[480px] bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
+      <div className="fixed top-[80px] right-0 h-[calc(100vh-80px)] w-full sm:w-[480px] bg-card z-50 shadow-2xl flex flex-col animate-slide-in">
+        {/* Breadcrumb bar */}
+        <div
+          style={{
+            height: 36,
+            minHeight: 36,
+            background: "#162236",
+            borderBottom: "1px solid #2A3F5C",
+            padding: "0 16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#4FA3D1",
+              fontSize: 12,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              padding: 0,
+            }}
+          >
+            ← Back to deals
+          </button>
+          <span
+            style={{
+              fontSize: 12,
+              color: "#6B7F96",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {deal.name}{deal.sub ? ` — ${deal.sub}` : ""}
+          </span>
+        </div>
+
         {/* Close button */}
         <button
           aria-label="Close"
           onClick={onClose}
-          className="fixed top-[96px] sm:top-4 right-4 z-[150] min-w-[44px] min-h-[44px] w-11 h-11 sm:w-8 sm:h-8 rounded-lg bg-navy/50 hover:bg-navy flex items-center justify-center text-muted hover:text-white transition-colors"
+          className="absolute top-[44px] sm:top-[44px] right-4 z-[150] min-w-[44px] min-h-[44px] w-11 h-11 sm:w-8 sm:h-8 rounded-lg bg-navy/50 hover:bg-navy flex items-center justify-center text-muted hover:text-white transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -498,14 +438,112 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
             {/* Section 2: Next Action */}
             <DrawerSection title="Next Action" icon={IconAction}>
-              <div className="flex gap-2">
-                <button className="flex-1 bg-blue hover:bg-blue/80 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-colors">
-                  {deal.action1}
+              {/* Row 1: CALL + Text Prospect + Open in HubSpot */}
+              <div className="flex flex-wrap gap-2">
+                {/* CALL button */}
+                <button
+                  onClick={() => {
+                    const phone = deal.contacts[0]?.name ? undefined : undefined; // contacts don't have phone
+                    if (phone) {
+                      window.open(`tel:${phone}`, "_self");
+                    } else {
+                      setNoPhoneToast(true);
+                      setTimeout(() => setNoPhoneToast(false), 3000);
+                    }
+                  }}
+                  style={{
+                    flex: "1 1 auto",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: "10px 16px",
+                    borderRadius: 8,
+                    border: "none",
+                    color: "#fff",
+                    cursor: "pointer",
+                    background: (() => {
+                      if (!deal.closeDate) return "#4FA3D1";
+                      const close = new Date(deal.closeDate);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      close.setHours(0, 0, 0, 0);
+                      if (close < today) return "#FF4A2D";
+                      if (close.getTime() === today.getTime()) return "#F5A623";
+                      return "#4FA3D1";
+                    })(),
+                  }}
+                >
+                  {(() => {
+                    if (!deal.closeDate) return "CALL";
+                    const close = new Date(deal.closeDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    close.setHours(0, 0, 0, 0);
+                    if (close < today) return "CALL — OVERDUE";
+                    if (close.getTime() === today.getTime()) return "CALL — closes TODAY";
+                    return "CALL";
+                  })()}
                 </button>
-                <button className="flex-1 bg-navy/50 hover:bg-navy border border-border text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-colors">
-                  {deal.action2}
+
+                {/* Text Prospect button */}
+                <button
+                  onClick={() => {
+                    const contactName = deal.contacts[0]?.name?.split(" ")[0] || "there";
+                    const company = deal.name;
+                    const cat = deal.cat;
+                    let message = "";
+                    if (cat === "neg") {
+                      message = `Hi ${contactName}, George from AdCellerant. Wanted to check in on the ${company} partnership — are we good to move forward this week?`;
+                    } else if (cat === "prop") {
+                      message = `Hi ${contactName}, George from AdCellerant. Following up on the proposal we sent for ${company}. Would love to get your feedback — do you have 15 minutes this week?`;
+                    } else if (cat === "needs") {
+                      message = `Hi ${contactName}, George from AdCellerant. Great connecting recently about ${company}. I have a few ideas I'd love to share — when works for a quick call?`;
+                    } else {
+                      message = `Hi ${contactName}, George from AdCellerant. Reaching out about ${company} — would love to connect. When's a good time?`;
+                    }
+                    // No phone numbers on contacts currently — open SMS app with message only
+                    setNoPhoneToast(true);
+                    setTimeout(() => setNoPhoneToast(false), 3000);
+                  }}
+                  style={{
+                    flex: "1 1 auto",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: "10px 16px",
+                    borderRadius: 8,
+                    background: "transparent",
+                    border: "1px solid #A78BFA",
+                    color: "#A78BFA",
+                    cursor: "pointer",
+                  }}
+                >
+                  💬 Text Prospect
+                </button>
+
+                {/* Open in HubSpot button */}
+                <button
+                  onClick={() => {
+                    window.open(
+                      `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-3/${deal.hsId}`,
+                      "_blank"
+                    );
+                  }}
+                  style={{
+                    flex: "1 1 auto",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: "10px 16px",
+                    borderRadius: 8,
+                    background: "transparent",
+                    border: "1px solid #2A3F5C",
+                    color: "#6B7F96",
+                    cursor: "pointer",
+                  }}
+                >
+                  Open in HubSpot
                 </button>
               </div>
+
+              {/* Row 2: View Research Brief */}
               {deal.hasResearch && (
                 <button
                   onClick={() => setShowResearch(true)}
@@ -784,157 +822,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               );
             })()}
 
-            {/* Section 2: Log to HubSpot */}
-            <DrawerSection title="Log to HubSpot" icon={IconLog}>
-              <textarea
-                value={logText}
-                onChange={(e) => setLogText(e.target.value)}
-                placeholder='Type any update in plain English — e.g. "Move close date to April 20" or "Add a note that SOW was received"'
-                className="w-full bg-navy/50 border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted resize-none focus:outline-none focus:border-blue"
-                rows={3}
-              />
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={handleParsePreview}
-                  disabled={!logText.trim() || logStatus === "parsing"}
-                  className="bg-[#A78BFA]/20 text-[#A78BFA] text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-[#A78BFA]/30 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {logStatus === "parsing" ? (
-                    <>
-                      <span className="w-3 h-3 border-2 border-[#A78BFA] border-t-transparent rounded-full animate-spin" />
-                      Parsing...
-                    </>
-                  ) : (
-                    <>&#10022; Parse &amp; Preview</>
-                  )}
-                </button>
-              </div>
-
-              {/* Preview table */}
-              {logOps && logOps.length > 0 && (
-                <div className="mt-3">
-                  {logSummary && (
-                    <p className="text-muted text-xs mb-2">{logSummary}</p>
-                  )}
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="text-muted">
-                        <th className="text-left py-1 font-medium">Change</th>
-                        <th className="text-left py-1 font-medium">Current</th>
-                        <th className="text-left py-1 font-medium">New</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {logOps.map((op, i) => (
-                        <tr key={i} className="border-t border-border">
-                          <td className="py-1.5 text-white">{op.field}</td>
-                          <td className="py-1.5 text-muted">{op.currentValue}</td>
-                          <td className="py-1.5 text-green">
-                            {op.type === "add_note" ? (
-                              <span className="italic">{op.newValue}</span>
-                            ) : (
-                              op.newValue
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {/* Stage gate warning */}
-                  {stageWarning && (
-                    <div
-                      style={{
-                        border: "0.5px solid rgba(245,166,35,0.4)",
-                        background: "rgba(245,166,35,0.06)",
-                        borderRadius: 8,
-                        padding: "12px 14px",
-                        marginTop: 8,
-                        marginBottom: 8,
-                      }}
-                    >
-                      <p style={{ fontSize: 11, fontWeight: 600, color: "#F5A623", marginBottom: 4 }}>
-                        ⚠ Stage advance — deal incomplete
-                      </p>
-                      <p style={{ fontSize: 10, color: "#F0F4F8", marginBottom: 6 }}>
-                        {stageWarning.score}% complete · {stageWarning.missing.length} items missing
-                      </p>
-                      <ul style={{ fontSize: 10, color: "#6B7F96", marginBottom: 8, paddingLeft: 14 }}>
-                        {stageWarning.missing.slice(0, 3).map((item) => (
-                          <li key={item} style={{ marginBottom: 2 }}>{item}</li>
-                        ))}
-                        {stageWarning.missing.length > 3 && (
-                          <li style={{ color: "#F5A623" }}>+{stageWarning.missing.length - 3} more</li>
-                        )}
-                      </ul>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button
-                          onClick={() => {
-                            setLogOps(null);
-                            setLogSummary("");
-                            setStageWarning(null);
-                            setLogStatus("idle");
-                            meddicRef.current?.scrollIntoView({ behavior: "smooth" });
-                          }}
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 600,
-                            color: "#2ECC8A",
-                            background: "rgba(46,204,138,0.15)",
-                            border: "0.5px solid rgba(46,204,138,0.3)",
-                            borderRadius: 6,
-                            padding: "4px 10px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Complete first
-                        </button>
-                        <button
-                          onClick={() => {
-                            setStageWarning(null);
-                            handleConfirmLog();
-                          }}
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 500,
-                            color: "#6B7F96",
-                            background: "none",
-                            border: "0.5px solid #2A3F5C",
-                            borderRadius: 6,
-                            padding: "4px 10px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Advance anyway
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={handleConfirmLog}
-                      disabled={logStatus === "saving"}
-                      className="bg-green/20 text-green text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-green/30 transition-colors disabled:opacity-50"
-                    >
-                      {logStatus === "saving" ? "Saving..." : "Confirm & Write"}
-                    </button>
-                    <button
-                      onClick={() => { setLogOps(null); setLogSummary(""); setStageWarning(null); setLogStatus("idle"); }}
-                      className="bg-navy/50 text-muted text-xs font-medium px-3 py-1.5 rounded-lg hover:text-white transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {logStatus === "saved" && (
-                <p className="text-green text-xs mt-2">Changes saved to HubSpot</p>
-              )}
-              {logError && (
-                <p className="text-orange text-xs mt-2">{logError}</p>
-              )}
-            </DrawerSection>
-
             {/* Section 3: Draft Client Email */}
             <DrawerSection title="Draft Client Email" icon={IconEmail}>
               <div className="flex flex-wrap gap-1.5 mb-3">
@@ -1055,6 +942,23 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
       {/* Research Panel overlay */}
       {showResearch && (
         <ResearchPanel deal={deal} onClose={() => setShowResearch(false)} />
+      )}
+
+      {/* No phone toast */}
+      {noPhoneToast && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 text-white text-center whitespace-nowrap"
+          style={{
+            background: "#F5A623",
+            padding: "10px 20px",
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            zIndex: 999,
+          }}
+        >
+          No phone number on file for this contact
+        </div>
       )}
 
       {/* Outreach toast */}

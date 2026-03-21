@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { RepConfig } from "@/lib/reps";
 import { REP_PHOTOS } from "@/lib/repPhotos";
 import FlagBadge from "./FlagBadge";
@@ -10,20 +9,8 @@ interface RepHeaderProps {
 }
 
 export default function RepHeader({ config }: RepHeaderProps) {
-  const router = useRouter();
-
   return (
     <div className="flex items-center gap-4 mb-4">
-      <button
-        onClick={() => router.push("/dashboard")}
-        className="text-muted hover:text-white text-sm transition-colors flex items-center gap-1 flex-shrink-0"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        All reps
-      </button>
-
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="relative flex-shrink-0">
           <div
