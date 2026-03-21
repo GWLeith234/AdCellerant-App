@@ -45,11 +45,11 @@ export default function PipelineView({ deals, repFilter, onDealClick, onResearch
   }, [repDeals]);
 
   const tabs: Tab[] = [
-    { key: "all", label: "All Deals", count: counts.all },
+    { key: "all", label: "Int Book", count: counts.all },
     { key: "neg", label: "Negotiation", count: counts.neg },
     { key: "prop", label: "Proposal", count: counts.prop },
-    { key: "ent", label: "High Value", count: counts.ent },
-    { key: "leads", label: "Leads", count: counts.leads },
+    { key: "ent", label: "🐋", count: counts.ent },
+    { key: "leads", label: "Prospects", count: counts.leads },
   ];
 
   const filteredDeals = useMemo(() => {
