@@ -71,7 +71,7 @@ RECOMMENDED NEXT MOVE
 OPEN QUESTIONS
 [content]
 
-Be specific, actionable, and concise. 3-5 sentences per section. Reference the deal data provided. Do NOT use JSON. Do NOT use markdown formatting or code blocks.`,
+Be specific, actionable, and concise. Format each section as 3-5 concise bullet points. Do NOT write paragraphs. Each bullet should be one clear insight, 1-2 sentences max. Start each bullet with "• ". Reference the deal data provided. Do NOT use JSON. Do NOT use markdown formatting or code blocks.`,
       messages: [
         {
           role: "user",

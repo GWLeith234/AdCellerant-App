@@ -3,6 +3,23 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import type { ParsedDeal } from "@/lib/hubspot";
 
+/** Convert section content into bullet points, handling both bullet-formatted and paragraph text */
+function toBullets(text: string): string[] {
+  // If text already has bullet markers, split on them
+  const bulletLines = text
+    .split(/\n/)
+    .map((l) => l.replace(/^[\s•\-\*]+/, "").trim())
+    .filter(Boolean);
+
+  if (bulletLines.length >= 2) return bulletLines;
+
+  // Fallback: split paragraphs into sentences
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 10);
+}
+
 interface ResearchData {
   sections: Record<string, string>;
   rawText?: string;
@@ -158,9 +175,13 @@ export default function ResearchPanel({ deal, onClose }: ResearchPanelProps) {
                       </h3>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-slate text-[13px] leading-[1.6] whitespace-pre-wrap">
-                        {content}
-                      </p>
+                      <ul className="list-disc pl-5 space-y-1.5" style={{ color: "#A78BFA" }}>
+                        {toBullets(content).map((bullet, idx) => (
+                          <li key={idx} className="text-[13px] leading-[1.6]">
+                            <span style={{ color: "#F0F4F8" }}>{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 );
