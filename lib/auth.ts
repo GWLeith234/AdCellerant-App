@@ -22,7 +22,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // If coming from sign-in (callbackUrl is /dashboard), redirect to rep view
+      // If coming from sign-in, redirect to dashboard
       if (url === `${baseUrl}/dashboard` || url === "/dashboard") {
         return `${baseUrl}/dashboard`;
       }

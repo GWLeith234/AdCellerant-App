@@ -8,22 +8,30 @@ interface FlagBadgeProps {
 export default function FlagBadge({ country, size = 20 }: FlagBadgeProps) {
   if (country === "ca") {
     return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 40 40"
+      <div
         className="absolute -bottom-1 -right-1"
+        style={{
+          width: size + 2,
+          height: size + 2,
+          borderRadius: "50%",
+          overflow: "hidden",
+          border: "2px solid #0D1B2E",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#fff",
+        }}
       >
-        <circle cx="20" cy="20" r="19" fill="#FF0000" stroke="#0D1B2E" strokeWidth="2" />
-        <circle cx="20" cy="20" r="15" fill="white" />
-        {/* Maple leaf polygon */}
-        <polygon
-          fill="#FF0000"
-          points="20,8 21.5,14 24,13 22.5,16 26,16 23,18.5 24.5,20 20,17.5 15.5,20 17,18.5 14,16 17.5,16 16,13 18.5,14"
-        />
-        {/* Stem */}
-        <rect x="19" y="17.5" width="2" height="6" fill="#FF0000" />
-      </svg>
+        <svg viewBox="0 0 40 20" width={size + 6} height={(size + 6) / 2}>
+          <rect x="0" y="0" width="10" height="20" fill="#FF0000" />
+          <rect x="10" y="0" width="20" height="20" fill="#FFFFFF" />
+          <rect x="30" y="0" width="10" height="20" fill="#FF0000" />
+          <path
+            d="M20 3.5 L21 7 L18.5 8.5 L19.5 9 L18 12 L19 12 L18.5 14.5 L20 13.5 L21.5 14.5 L21 12 L22 12 L20.5 9 L21.5 8.5 L19 7 Z"
+            fill="#FF0000"
+          />
+        </svg>
+      </div>
     );
   }
 

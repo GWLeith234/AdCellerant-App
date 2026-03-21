@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { RepConfig } from "@/lib/reps";
 import { REP_PHOTOS } from "@/lib/repPhotos";
 import FlagBadge from "./FlagBadge";
@@ -14,6 +13,9 @@ interface RepCardProps {
   booked: BookedByRepMonth;
   targets: TargetsByRepMonth;
   currentMonth: string;
+  selected?: boolean;
+  dimmed?: boolean;
+  onSelect?: () => void;
 }
 
 function formatShort(val: number): string {
@@ -23,10 +25,32 @@ function formatShort(val: number): string {
   return `$${val.toFixed(0)}`;
 }
 
-function ragColor(pct: number): string {
-  if (pct >= 100) return "text-green";
-  if (pct >= 75) return "text-amber";
+function achievedColor(pct: number): string {
+  if (pct >= 80) return "text-green";
+  if (pct >= 50) return "text-amber";
   return "text-orange";
+}
+
+function getWorkingDaysRemaining(): number {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  let count = 0;
+  for (let d = now.getDate() + 1; d <= lastDay; d++) {
+    const day = new Date(year, month, d).getDay();
+    if (day !== 0 && day !== 6) count++;
+  }
+  return count;
+}
+
+function getMonthNames() {
+  const now = new Date();
+  const currentMonthLong = now.toLocaleString("en-US", { month: "long" }).toUpperCase();
+  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonthLong = nextMonthDate.toLocaleString("en-US", { month: "long" }).toUpperCase();
+  const nextMonthShort = nextMonthDate.toLocaleString("en-US", { month: "short" });
+  return { currentMonthLong, nextMonthLong, nextMonthShort };
 }
 
 export default function RepCard({
@@ -36,28 +60,45 @@ export default function RepCard({
   booked,
   targets,
   currentMonth,
+  selected = false,
+  dimmed = false,
+  onSelect,
 }: RepCardProps) {
-  const router = useRouter();
-
   const repBooked = booked[config.key] || {};
   const repTargets = targets[config.key] || {};
 
   // Current month stats
-  const marBooked = repBooked[currentMonth] || 0;
-  const marTarget = repTargets[currentMonth] || 0;
-  const marAtt = marTarget > 0 ? Math.round((marBooked / marTarget) * 100) : 0;
+  const curBooked = repBooked[currentMonth] || 0;
+  const curTarget = repTargets[currentMonth] || 0;
+  const curAtt = curTarget > 0 ? Math.round((curBooked / curTarget) * 100) : 0;
+
+  // Next month stats
+  const { currentMonthLong, nextMonthLong, nextMonthShort } = getMonthNames();
+  const nxtBooked = repBooked[nextMonthShort] || 0;
+  const nxtTarget = repTargets[nextMonthShort] || 0;
+  const nxtAtt = nxtTarget > 0 ? Math.round((nxtBooked / nxtTarget) * 100) : 0;
 
   // Q1 booked (Jan + Feb + Mar)
   const q1Months = ["Jan", "Feb", "Mar"];
   const q1Booked = q1Months.reduce((sum, m) => sum + (repBooked[m] || 0), 0);
 
-  // Ramp stats for Alex
+  const daysRemain = getWorkingDaysRemaining();
+
   const isRamp = config.isRamp;
+  const hasData = curBooked > 0 || curTarget > 0 || nxtBooked > 0 || nxtTarget > 0;
+
+  const handleClick = () => {
+    onSelect?.();
+  };
 
   return (
     <div
-      onClick={() => router.push(`/dashboard/${config.key}`)}
-      className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-blue/50 transition-colors flex flex-col"
+      onClick={handleClick}
+      className="bg-card rounded-xl overflow-hidden cursor-pointer transition-all flex flex-col"
+      style={{
+        border: selected ? "2px solid #4FA3D1" : "1px solid var(--border)",
+        opacity: dimmed ? 0.6 : 1,
+      }}
     >
       {/* Top gradient strip */}
       <div
@@ -105,39 +146,71 @@ export default function RepCard({
         </div>
       </div>
 
-      {/* Stat tiles 2x2 */}
-      <div className="px-4 pb-4 mt-auto">
-        {isRamp ? (
-          <div className="grid grid-cols-2 gap-2">
-            <RepStatTile label="Ramp" value="Active" color="text-amber" />
-            <RepStatTile label="Ann Tgt" value={formatShort(repTargets["Annual"] || 0)} color="text-white" />
-            <RepStatTile label="UK%" value="—" color="text-blue" />
-            <RepStatTile label="1st Deal" value="Pending" color="text-muted" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
+      {/* Scorecard tiles — 2 rows */}
+      <div className="px-3 pb-3 mt-auto flex flex-col" style={{ gap: 8 }}>
+        {/* ROW 1 — Current month */}
+        <div>
+          <p
+            className="text-center font-bold uppercase mb-1"
+            style={{ fontSize: 11, color: "#FF4A2D", letterSpacing: 1 }}
+          >
+            {currentMonthLong}
+          </p>
+          <div className="grid grid-cols-4" style={{ gap: 4 }}>
             <RepStatTile
-              label="Mar Bkd"
-              value={formatShort(marBooked)}
-              color={marBooked > 0 ? "text-green" : "text-muted"}
+              label="BKD"
+              value={hasData ? formatShort(curBooked) : "—"}
+              color={curBooked > 0 ? "text-orange" : "text-muted"}
             />
             <RepStatTile
-              label="Mar Tgt"
-              value={formatShort(marTarget)}
+              label="TGT"
+              value={hasData ? formatShort(curTarget) : "—"}
               color="text-white"
             />
             <RepStatTile
-              label="Mar Att"
-              value={marTarget > 0 ? `${marAtt}%` : "—"}
-              color={marTarget > 0 ? ragColor(marAtt) : "text-muted"}
+              label="ATT"
+              value={isRamp && !hasData ? "Ramp" : (hasData && curTarget > 0 ? `${curAtt}%` : "—")}
+              color={isRamp && !hasData ? "text-amber" : (hasData && curTarget > 0 ? achievedColor(curAtt) : "text-muted")}
             />
             <RepStatTile
-              label="Q1 Bkd"
-              value={formatShort(q1Booked)}
+              label="DAYS"
+              value={`${daysRemain}`}
+              color="text-white"
+            />
+          </div>
+        </div>
+
+        {/* ROW 2 — Next month */}
+        <div>
+          <p
+            className="text-center font-bold uppercase mb-1"
+            style={{ fontSize: 11, color: "#FF4A2D", letterSpacing: 1 }}
+          >
+            {nextMonthLong}
+          </p>
+          <div className="grid grid-cols-4" style={{ gap: 4 }}>
+            <RepStatTile
+              label="BKD"
+              value={nxtBooked > 0 ? formatShort(nxtBooked) : "—"}
+              color={nxtBooked > 0 ? "text-orange" : "text-muted"}
+            />
+            <RepStatTile
+              label="TGT"
+              value={nxtTarget > 0 ? formatShort(nxtTarget) : "—"}
+              color="text-white"
+            />
+            <RepStatTile
+              label="ATT"
+              value={nxtTarget > 0 ? `${nxtAtt}%` : "—"}
+              color={nxtTarget > 0 ? achievedColor(nxtAtt) : "text-muted"}
+            />
+            <RepStatTile
+              label="Q1"
+              value={q1Booked > 0 ? formatShort(q1Booked) : "—"}
               color={q1Booked > 0 ? "text-green" : "text-muted"}
             />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

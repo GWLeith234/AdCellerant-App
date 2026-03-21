@@ -113,6 +113,30 @@ export default function DrawerHero({ deal }: DrawerHeroProps) {
           </span>
         )}
       </div>
+
+      {/* Open in HubSpot */}
+      {deal.hsId && (
+        <div className="flex justify-end mt-3">
+          <a
+            href={`https://app.hubspot.com/contacts/47345959/record/0-3/${deal.hsId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: 11,
+              color: "#4FA3D1",
+              border: "1px solid #2A3F5C",
+              borderRadius: 6,
+              padding: "4px 10px",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            Open in HubSpot ↗
+          </a>
+        </div>
+      )}
     </div>
   );
 }

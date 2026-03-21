@@ -9,7 +9,6 @@ export default function PreviewPage() {
         <DashboardClient
           userEmail="george.leith@adcellerant.com"
           userName="George Leith"
-          rep="george"
         />
       </main>
     </div>

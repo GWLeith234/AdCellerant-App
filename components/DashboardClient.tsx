@@ -3,13 +3,10 @@
 import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import type { AppAction } from "@/lib/types";
 import type { ParsedDeal } from "@/lib/hubspot";
-import { getRepConfig } from "@/lib/reps";
 import { useRevenueData } from "@/lib/RevenueDataContext";
+import { useDealData } from "@/lib/DealDataContext";
 import DealGridSkeleton from "./DealGridSkeleton";
 import TeamGrid from "./TeamGrid";
-import ScorecardPanel from "./ScorecardPanel";
-import RepHeader from "./RepHeader";
-import FocusedPipeline from "./FocusedPipeline";
 import DealDrawer from "./DealDrawer";
 import ResearchRequestModal from "./ResearchRequestModal";
 import SubNav from "./SubNav";
@@ -63,12 +60,12 @@ function reducer(state: DealState, action: AppAction): DealState {
 interface DashboardClientProps {
   userEmail: string;
   userName: string;
-  rep: string | null;
 }
 
-export default function DashboardClient({ userEmail, userName, rep }: DashboardClientProps) {
+export default function DashboardClient({ userEmail, userName }: DashboardClientProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { bookedByRepMonth, targetsByRepMonth } = useRevenueData();
+  const { uploadedDeals, hasUploadedDeals } = useDealData();
 
   const [selectedDeal, setSelectedDeal] = useState<ParsedDeal | null>(null);
   const [researchDeal, setResearchDeal] = useState<ParsedDeal | null>(null);
@@ -116,23 +113,31 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
     loadDeals();
   }, [loadDeals]);
 
-  const repConfig = rep ? getRepConfig(rep) : null;
-  const isFocused = !!rep && !!repConfig;
+  // Listen for refresh events from Topbar
+  useEffect(() => {
+    const handler = () => loadDeals(true);
+    window.addEventListener("adcellerant:refresh", handler);
+    return () => window.removeEventListener("adcellerant:refresh", handler);
+  }, [loadDeals]);
+
+  // Use uploaded deals if available, otherwise fall back to API-loaded deals
+  const activeDeals = hasUploadedDeals ? uploadedDeals : state.deals;
+  const isMock = hasUploadedDeals ? false : state.hubspotUnavailable;
 
   return (
     <div>
       {/* Sub-navigation bar */}
       <SubNav
-        rep={rep}
+        rep={null}
         userEmail={userEmail}
         refreshing={refreshing}
-        dealsLoading={state.dealsLoading}
-        isMock={state.hubspotUnavailable}
+        dealsLoading={state.dealsLoading && !hasUploadedDeals}
+        isMock={isMock}
         onRefresh={() => loadDeals(true)}
       />
 
       {/* Error banner */}
-      {state.dealsError && !state.hubspotUnavailable && (
+      {state.dealsError && !isMock && !hasUploadedDeals && (
         <div className="mb-4">
           <span className="text-orange text-xs bg-orange/10 border border-orange/30 px-2.5 py-1 rounded-lg">
             {state.dealsError}
@@ -141,29 +146,16 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
       )}
 
       {/* Deals loading skeleton */}
-      {state.dealsLoading && (
+      {state.dealsLoading && !hasUploadedDeals && (
         <div className="mb-6">
-          <DealGridSkeleton count={8} columns={isFocused ? 3 : 4} />
+          <DealGridSkeleton count={8} columns={4} />
         </div>
       )}
 
-      {/* Focused rep view */}
-      {!state.dealsLoading && isFocused && repConfig && (
-        <>
-          <RepHeader config={repConfig} />
-          <ScorecardPanel
-            config={repConfig}
-            booked={bookedByRepMonth}
-            targets={targetsByRepMonth}
-          />
-          <FocusedPipeline deals={state.deals} rep={rep} onDealClick={setSelectedDeal} onResearchClick={setResearchDeal} />
-        </>
-      )}
-
       {/* Team view */}
-      {!state.dealsLoading && !isFocused && (
+      {(!state.dealsLoading || hasUploadedDeals) && (
         <TeamGrid
-          deals={state.deals}
+          deals={activeDeals}
           booked={bookedByRepMonth}
           targets={targetsByRepMonth}
           onDealClick={setSelectedDeal}

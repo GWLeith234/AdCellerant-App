@@ -1,6 +1,7 @@
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import type { BookedByRepMonth, TargetsByRepMonth } from "./types";
+import type { ParsedDeal } from "./hubspot";
 
 const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -189,9 +190,9 @@ function parseWoWTrackerSheet(workbook: XLSX.WorkBook): BookedByRepMonth {
     const amount = typeof valCell.v === "number" ? valCell.v : parseFloat(String(valCell.v).replace(/[$,]/g, ""));
     if (isNaN(amount) || amount === 0) continue;
 
-    // Store as team-level booked (will be merged if CSV also provides per-rep data)
-    if (!booked["_wow_total"]) booked["_wow_total"] = {};
-    booked["_wow_total"][month] = amount;
+    // Store as George's booked (WoW Tracker tracks George's CA+V revenue)
+    if (!booked["george"]) booked["george"] = {};
+    booked["george"][month] = amount;
   }
 
   return booked;
@@ -267,4 +268,171 @@ function parseTargetsSheet(workbook: XLSX.WorkBook): TargetsByRepMonth {
   }
 
   return targets;
+}
+
+/* ── HubSpot Deal Export CSV Parser ──────────────────── */
+
+const STAGE_MAP: Record<string, { category: string; label: string; stageClass: string }> = {
+  appointmentscheduled: { category: "leads", label: "Qualification", stageClass: "stage-lead" },
+  qualifiedtobuy: { category: "leads", label: "Needs Analysis", stageClass: "stage-lead" },
+  presentationscheduled: { category: "prop", label: "Proposal", stageClass: "stage-prop" },
+  decisionmakerboughtin: { category: "neg", label: "Negotiation", stageClass: "stage-neg" },
+  closedwon: { category: "cw", label: "Closed Won", stageClass: "stage-cw" },
+  closedlost: { category: "cl", label: "Closed Lost", stageClass: "stage-cl" },
+};
+
+const DEAL_OWNER_MAP: Record<string, string> = {
+  "78947458": "george",
+  "80955316": "andy",
+  "83471854": "alex",
+};
+
+function formatValShort(val: number): string {
+  if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `$${(val / 1_000).toFixed(1)}K`;
+  return `$${val.toFixed(0)}`;
+}
+
+function daysSince(dateStr: string): number {
+  if (!dateStr) return 0;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+}
+
+/**
+ * Find a column value by trying multiple possible header names.
+ * Returns the first match found (case-insensitive, whitespace-normalized).
+ */
+function findCol(row: Record<string, string>, ...candidates: string[]): string {
+  for (const c of candidates) {
+    const key = Object.keys(row).find(
+      (k) => k.trim().toLowerCase().replace(/[\s_]+/g, "") === c.toLowerCase().replace(/[\s_]+/g, "")
+    );
+    if (key && row[key] !== undefined) return row[key].trim();
+  }
+  return "";
+}
+
+/**
+ * Parse a HubSpot deals export CSV into ParsedDeal[].
+ *
+ * Accepts standard HubSpot export with columns:
+ *   Deal Name, Deal Stage, Amount, Close Date, HubSpot Owner ID,
+ *   Record ID / Deal ID, Associated Company, etc.
+ *
+ * Skips rows with missing required fields or unrecognized owner IDs.
+ */
+export function parseHubSpotDealsCSV(file: File): Promise<ParsedDeal[]> {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete(results) {
+        const rows = results.data as Record<string, string>[];
+        if (rows.length === 0) {
+          reject(new Error("CSV is empty — no deals found"));
+          return;
+        }
+
+        const deals: ParsedDeal[] = [];
+
+        for (const row of rows) {
+          try {
+            const name = findCol(row, "DealName", "Deal Name", "Name");
+            if (!name) continue; // skip rows without a deal name
+
+            const stageRaw = findCol(row, "DealStage", "Deal Stage", "Stage", "Pipeline Stage")
+              .toLowerCase().replace(/[^a-z0-9]/g, "");
+            const stageInfo = STAGE_MAP[stageRaw] || {
+              category: "leads",
+              label: stageRaw || "Unknown",
+              stageClass: "stage-lead",
+            };
+
+            const amountRaw = findCol(row, "Amount", "Deal Amount", "DealAmount");
+            const amount = amountRaw ? parseFloat(amountRaw.replace(/[$,]/g, "")) : 0;
+            const val = isNaN(amount) ? 0 : amount;
+
+            const closeDate = findCol(row, "CloseDate", "Close Date", "Close date");
+            const ownerId = findCol(row, "HubSpotOwnerID", "HubSpot Owner ID", "Owner ID", "OwnerID", "hubspot_owner_id");
+            const dealId = findCol(row, "RecordID", "Record ID", "DealID", "Deal ID", "hs_object_id");
+            const company = findCol(row, "AssociatedCompany", "Associated Company", "Company", "Company Name", "CompanyName");
+            const persona = findCol(row, "Persona", "Deal Persona", "persona");
+            const createDate = findCol(row, "CreateDate", "Create Date", "Create date", "Created");
+
+            // Determine rep from owner ID or company name
+            let rep = DEAL_OWNER_MAP[ownerId] || "";
+            if (!rep && company.toLowerCase().includes("vendasta")) {
+              rep = "vendasta";
+            }
+            if (!rep) continue; // skip deals with unrecognized owners
+
+            const stageAge = createDate ? daysSince(createDate) : 0;
+
+            const deal: ParsedDeal = {
+              id: dealId || `csv-${deals.length}`,
+              hsId: dealId || "",
+              name,
+              sub: company || "",
+              val,
+              valShort: formatValShort(val),
+              rep,
+              stage: stageInfo.label,
+              stageClass: stageInfo.stageClass,
+              cat: stageInfo.category,
+              closeDate: closeDate || "",
+              stageAge,
+              persona: persona || "",
+              revenueLine: "",
+              meddic: {
+                metrics: "gap",
+                econBuyer: "gap",
+                decisionCriteria: "gap",
+                decisionProcess: "gap",
+                identifyPain: "gap",
+                champion: "gap",
+              },
+              contacts: [],
+              nda: "Not sent",
+              msa: "Not sent",
+              sow: "Not sent",
+              credit: "Not sent",
+              bizdev: "Not sent",
+              partner: "Not sent",
+              hasResearch: false,
+              researchNotes: "",
+              meddicNotes: {
+                metrics: "",
+                econBuyer: "",
+                decisionCriteria: "",
+                decisionProcess: "",
+                identifyPain: "",
+                champion: "",
+              },
+              action1: "Follow Up",
+              action2: "Update Stage",
+              description: "",
+              domain: null,
+            };
+
+            deals.push(deal);
+          } catch {
+            // Skip malformed rows
+            continue;
+          }
+        }
+
+        if (deals.length === 0) {
+          reject(new Error("No valid deals found in CSV — check column headers"));
+          return;
+        }
+
+        resolve(deals);
+      },
+      error(err) {
+        reject(new Error(`CSV parse error: ${err.message}`));
+      },
+    });
+  });
 }

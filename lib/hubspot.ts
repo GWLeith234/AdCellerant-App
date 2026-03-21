@@ -297,7 +297,8 @@ export function parseDealFromHubSpot(deal: {
 }): ParsedDeal {
   const props = deal.properties;
   const description = props.description || "";
-  const stageInfo = STAGE_MAP[props.dealstage] || {
+  const stageNorm = (props.dealstage || "").toLowerCase().replace(/[\s_]/g, "");
+  const stageInfo = STAGE_MAP[stageNorm] || {
     category: "unknown",
     probability: 0,
     label: props.dealstage || "Unknown",
@@ -379,7 +380,7 @@ export async function fetchAllDeals(): Promise<ParsedDeal[]> {
             {
               propertyName: "dealstage",
               operator: "NOT_IN",
-              values: ["closedwon", "closedlost"],
+              values: ["closedlost"],
             },
           ],
         },

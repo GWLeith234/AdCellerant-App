@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import AdCellerantLogo from "./AdCellerantLogo";
+import { useRevenueData } from "@/lib/RevenueDataContext";
 
 /* ── SVG Skylines ─────────────────────────────────────── */
 
@@ -234,32 +238,77 @@ function LondonSkyline() {
   );
 }
 
+/* ── Wireframe Globe SVG ──────────────────────────────── */
+
+function WireframeGlobe() {
+  return (
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 28 28"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ flexShrink: 0 }}
+    >
+      {/* Outer circle */}
+      <circle cx="14" cy="14" r="12" stroke="#4FA3D1" strokeWidth="0.8" />
+      {/* Vertical meridian (center) */}
+      <ellipse cx="14" cy="14" rx="5" ry="12" stroke="#4FA3D1" strokeWidth="0.6" />
+      {/* Second vertical meridian */}
+      <ellipse cx="14" cy="14" rx="9" ry="12" stroke="#4FA3D1" strokeWidth="0.4" />
+      {/* Horizontal latitude lines */}
+      <ellipse cx="14" cy="8" rx="11" ry="2" stroke="#4FA3D1" strokeWidth="0.5" />
+      <line x1="2" y1="14" x2="26" y2="14" stroke="#4FA3D1" strokeWidth="0.5" />
+      <ellipse cx="14" cy="20" rx="11" ry="2" stroke="#4FA3D1" strokeWidth="0.5" />
+    </svg>
+  );
+}
+
 /* ── Topbar ────────────────────────────────────────────── */
 
 const orb = "var(--font-orbitron), monospace";
 
+const navBtnStyle: React.CSSProperties = {
+  fontFamily: orb,
+  fontSize: 12,
+  color: "#F0F4F8",
+  letterSpacing: 1,
+  background: "transparent",
+  border: "1px solid #2A3F5C",
+  padding: "4px 12px",
+  borderRadius: 6,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
+function formatUploadTimestamp(iso: string | null): string {
+  if (!iso) return "not uploaded";
+  const d = new Date(iso);
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const month = months[d.getMonth()];
+  const day = d.getDate();
+  let hours = d.getHours();
+  const mins = d.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${month} ${day}, ${hours}:${mins} ${ampm}`;
+}
+
 export default function Topbar() {
   const [times, setTimes] = useState({ denver: "", saskatoon: "", london: "" });
-  const [formattedDate, setFormattedDate] = useState("");
+  const [cityDates, setCityDates] = useState({ denver: "", saskatoon: "", london: "" });
+  const router = useRouter();
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const { csvUploadedAt, excelUploadedAt } = useRevenueData();
 
-  useEffect(() => {
-    const date = new Date().toLocaleDateString("en-US", {
-      timeZone: "America/Denver",
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    // Format as "MONDAY · MARCH 16 · 2026"
-    const parts = date.replace(",", "").split(" ");
-    // parts: ["Monday", "March", "16", "2026"]
-    const formatted = `${parts[0]} · ${parts[1]} ${parts[2]} · ${parts[3]}`.toUpperCase();
-    setFormattedDate(formatted);
-  }, []);
+  const userEmail = session?.user?.email || "";
+  const isAdmin = userEmail === "george.leith@adcellerant.com";
+  const isOnDashboard = pathname === "/dashboard" || pathname === "/";
 
   useEffect(() => {
     function tick() {
-      const fmt = (tz: string) =>
+      const fmtTime = (tz: string) =>
         new Date().toLocaleTimeString("en-GB", {
           timeZone: tz,
           hour: "2-digit",
@@ -267,10 +316,22 @@ export default function Topbar() {
           second: "2-digit",
           hour12: false,
         });
+      const fmtDate = (tz: string) => {
+        const d = new Date();
+        const weekday = d.toLocaleDateString("en-US", { timeZone: tz, weekday: "short" });
+        const month = d.toLocaleDateString("en-US", { timeZone: tz, month: "short" });
+        const day = d.toLocaleDateString("en-US", { timeZone: tz, day: "numeric" });
+        return `${weekday}, ${month} ${day}`;
+      };
       setTimes({
-        denver: fmt("America/Denver"),
-        saskatoon: fmt("America/Regina"),
-        london: fmt("Europe/London"),
+        denver: fmtTime("America/Denver"),
+        saskatoon: fmtTime("America/Regina"),
+        london: fmtTime("Europe/London"),
+      });
+      setCityDates({
+        denver: fmtDate("America/Denver"),
+        saskatoon: fmtDate("America/Regina"),
+        london: fmtDate("Europe/London"),
       });
     }
     tick();
@@ -279,10 +340,13 @@ export default function Topbar() {
   }, []);
 
   const cities = [
-    { label: "DENVER", time: times.denver, Skyline: DenverSkyline },
-    { label: "SASKATOON", time: times.saskatoon, Skyline: SaskatoonSkyline },
-    { label: "LONDON", time: times.london, Skyline: LondonSkyline },
+    { label: "DENVER", time: times.denver, date: cityDates.denver, Skyline: DenverSkyline },
+    { label: "SASKATOON", time: times.saskatoon, date: cityDates.saskatoon, Skyline: SaskatoonSkyline },
+    { label: "LONDON", time: times.london, date: cityDates.london, Skyline: LondonSkyline },
   ] as const;
+
+  const hubspotDisplay = formatUploadTimestamp(csvUploadedAt);
+  const revenueDisplay = formatUploadTimestamp(excelUploadedAt);
 
   return (
     <header
@@ -291,6 +355,7 @@ export default function Topbar() {
         background: "#0B1624",
         borderBottom: "0.5px solid #1E3A5F",
         display: "flex",
+        alignItems: "center",
         position: "sticky",
         top: 0,
         zIndex: 100,
@@ -298,82 +363,135 @@ export default function Topbar() {
         overflow: "hidden",
       }}
     >
-      {/* ── LEFT PANEL ── */}
+      {/* ── GROUP 1: Logo area ── */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "0 18px",
-          gap: 12,
-          borderRight: "0.5px solid #1E3A5F",
+          padding: "0 16px",
+          gap: 10,
           flexShrink: 0,
         }}
       >
-        {/* A) AdCellerant icon */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logos/adcellerant-icon.png"
-          alt=""
-          style={{
-            width: 36,
-            height: 36,
-            objectFit: "contain",
-            mixBlendMode: "screen",
-            flexShrink: 0,
-          }}
-        />
-
-        {/* B) Brand text block */}
-        <div
-          style={{
-            borderLeft: "0.5px solid #1E3A5F",
-            paddingLeft: 12,
-            display: "flex",
-            flexDirection: "column",
-            gap: 3,
-          }}
-        >
+        <AdCellerantLogo />
+        <WireframeGlobe />
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           <span
             style={{
               fontFamily: orb,
-              fontSize: 7.5,
+              fontSize: 16,
               fontWeight: 700,
               color: "#FF4A2D",
-              letterSpacing: 2,
+              letterSpacing: 3,
               textTransform: "uppercase",
+              lineHeight: 1.1,
             }}
           >
-            INTERNATIONAL BUSINESS UNIT
+            COMMAND
           </span>
           <span
             style={{
               fontFamily: orb,
-              fontSize: 12,
-              fontWeight: 900,
-              color: "#4FC3D1",
+              fontSize: 11,
+              fontWeight: 400,
+              color: "#FF4A2D",
               letterSpacing: 3,
               textTransform: "uppercase",
+              lineHeight: 1.1,
             }}
           >
-            COMMAND CENTER
-          </span>
-
-          {/* C) Date at HQ */}
-          <span
-            style={{
-              fontFamily: "var(--font-orbitron, monospace)",
-              fontSize: 7,
-              color: "#4FA3D1",
-              letterSpacing: 1,
-              opacity: 0.7,
-            }}
-          >
-            {formattedDate}
+            CENTER
           </span>
         </div>
       </div>
 
-      {/* ── RIGHT PANEL — City panels ── */}
+      {/* Divider */}
+      <div style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
+
+      {/* ── GROUP 2: Navigation buttons ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "0 12px",
+          gap: 6,
+          flexShrink: 0,
+        }}
+      >
+        {!isOnDashboard && (
+          <button
+            onClick={() => router.push("/dashboard")}
+            style={navBtnStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
+          >
+            ← Dashboard
+          </button>
+        )}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("adcellerant:refresh"))}
+          style={navBtnStyle}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
+        >
+          ↻ Refresh
+        </button>
+        {isAdmin && (
+          <button
+            onClick={() => router.push("/admin")}
+            style={navBtnStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
+          >
+            ⚙ Admin
+          </button>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
+
+      {/* ── GROUP 3: Data freshness indicators (stacked) ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          padding: "0 12px",
+          gap: 16,
+          flexShrink: 0,
+          maxWidth: 200,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span style={{ fontFamily: orb, fontSize: 10, color: "#6B7F96" }}>HubSpot</span>
+          <span
+            style={{
+              fontFamily: orb,
+              fontSize: 10,
+              color: csvUploadedAt ? "#2ECC8A" : "#F5A623",
+            }}
+          >
+            {hubspotDisplay}
+          </span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span style={{ fontFamily: orb, fontSize: 10, color: "#6B7F96" }}>Revenue</span>
+          <span
+            style={{
+              fontFamily: orb,
+              fontSize: 10,
+              color: excelUploadedAt ? "#2ECC8A" : "#F5A623",
+            }}
+          >
+            {revenueDisplay}
+          </span>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
+
+      {/* ── GROUP 4: City clocks ── */}
       <div style={{ display: "flex", flex: 1 }}>
         {cities.map((city, i) => (
           <div
@@ -393,9 +511,11 @@ export default function Topbar() {
             <span
               style={{
                 fontFamily: orb,
-                fontSize: 6,
-                color: "#4FA3D1",
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#FF4A2D",
                 letterSpacing: 2,
+                textTransform: "uppercase",
                 marginTop: 2,
               }}
             >
@@ -404,13 +524,22 @@ export default function Topbar() {
             <span
               style={{
                 fontFamily: orb,
-                fontSize: 10,
-                fontWeight: 700,
+                fontSize: 16,
+                fontWeight: 600,
                 color: "#F0F4F8",
                 letterSpacing: 1,
               }}
             >
               {city.time}
+            </span>
+            <span
+              style={{
+                fontFamily: orb,
+                fontSize: 11,
+                color: "#6B7F96",
+              }}
+            >
+              {city.date}
             </span>
           </div>
         ))}

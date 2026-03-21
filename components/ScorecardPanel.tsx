@@ -8,14 +8,16 @@ import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
 const orb = "var(--font-orbitron), monospace";
 
 const GEORGE_REVENUE_TARGETS: Record<string, number> = {
-  Jan: 8985, Feb: 10553, Mar: 19966,
+  Jan: 8985, Feb: 10553, Mar: 39504,
   Apr: 14703, May: 17535, Jun: 34157,
   Jul: 29962, Aug: 29962, Sep: 29962,
   Oct: 29962, Nov: 29962, Dec: 29960,
 };
 
+const GEORGE_ANNUAL_TARGET = 1_500_000;
+
 const GEORGE_REVENUE_BOOKED: Record<string, number> = {
-  Jan: 5563, Feb: 12161, Mar: 15146, Apr: 12731,
+  Jan: 5563, Feb: 12161, Mar: 15146, Apr: 12731, May: 5234,
 };
 
 const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -69,10 +71,16 @@ function buildPeriods(
   booked: BookedByRepMonth,
   targets: TargetsByRepMonth,
 ): PeriodData[] {
-  // Use George's hard-coded data for george, otherwise fall back to context
   const isGeorge = repKey === "george";
-  const rb = isGeorge ? GEORGE_REVENUE_BOOKED : (booked[repKey] || {});
-  const rt = isGeorge ? GEORGE_REVENUE_TARGETS : (targets[repKey] || {});
+
+  // Prefer uploaded context data; fall back to hard-coded defaults for George
+  const contextBooked = booked[repKey];
+  const contextTargets = targets[repKey];
+  const hasUploadedBooked = contextBooked && Object.keys(contextBooked).length > 0;
+  const hasUploadedTargets = contextTargets && Object.keys(contextTargets).length > 0;
+
+  const rb = hasUploadedBooked ? contextBooked : (isGeorge ? GEORGE_REVENUE_BOOKED : {});
+  const rt = hasUploadedTargets ? contextTargets : (isGeorge ? GEORGE_REVENUE_TARGETS : {});
 
   // March
   const marRevBooked = rb["Mar"] || 0;
@@ -94,7 +102,9 @@ function buildPeriods(
 
   // Annual
   const annRevBooked = ALL_MONTHS.reduce((s, m) => s + (rb[m] || 0), 0);
-  const annRevTarget = ALL_MONTHS.reduce((s, m) => s + (rt[m] || 0), 0);
+  const annRevTarget = (isGeorge)
+    ? GEORGE_ANNUAL_TARGET
+    : ALL_MONTHS.reduce((s, m) => s + (rt[m] || 0), 0);
 
   const MARGIN_RATE = 0.30;
 
@@ -295,6 +305,20 @@ interface ScorecardPanelProps {
 export default function ScorecardPanel({ config, booked, targets }: ScorecardPanelProps) {
   const periods = buildPeriods(config.key, booked, targets);
 
+  // REV DEBUG — temporary: verify revenue numbers in Chrome DevTools
+  const marchPeriod = periods.find((p) => p.label === "MARCH");
+  if (marchPeriod) {
+    const att = marchPeriod.revTarget > 0
+      ? Math.round((marchPeriod.revBooked / marchPeriod.revTarget) * 100)
+      : 0;
+    console.log("REV DEBUG:", {
+      rep: config.key,
+      monthBooked: marchPeriod.revBooked,
+      monthTarget: marchPeriod.revTarget,
+      attainment: att,
+    });
+  }
+
   return (
     <div
       style={{
@@ -373,46 +397,6 @@ export default function ScorecardPanel({ config, booked, targets }: ScorecardPan
         ))}
       </div>
 
-      {/* ROW D: Attainment summary strip */}
-      <div
-        style={{
-          borderTop: "0.5px solid #1E3A5F",
-          paddingTop: 8,
-        }}
-      >
-        <div className="scorecard-grid" style={{ gap: 8 }}>
-          {periods.map((p) => {
-            const pct = attPct(p.revBooked, p.revTarget);
-            return (
-              <div key={`att-${p.label}`} style={{ textAlign: "center" }}>
-                <span
-                  style={{
-                    fontFamily: orb,
-                    fontSize: 17,
-                    fontWeight: 700,
-                    color: ragColor(pct),
-                    display: "block",
-                  }}
-                >
-                  {pct.toFixed(1)}%
-                </span>
-                <span
-                  style={{
-                    fontFamily: orb,
-                    fontSize: 7,
-                    color: "#6B7F96",
-                    letterSpacing: 1,
-                    display: "block",
-                    marginTop: 2,
-                  }}
-                >
-                  {p.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
