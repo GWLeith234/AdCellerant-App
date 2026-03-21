@@ -94,7 +94,7 @@ export default function RepCard({
   return (
     <div
       onClick={handleClick}
-      className="bg-card rounded-xl overflow-hidden cursor-pointer transition-all flex flex-col"
+      className="bg-card rounded-xl cursor-pointer transition-all flex flex-col"
       style={{
         border: selected ? "2px solid #4FA3D1" : "1px solid var(--border)",
         opacity: dimmed ? 0.6 : 1,
@@ -105,6 +105,7 @@ export default function RepCard({
         className="h-2"
         style={{
           background: `linear-gradient(to right, ${config.gradientFrom}, ${config.gradientTo})`,
+          borderRadius: "12px 12px 0 0",
         }}
       />
 
