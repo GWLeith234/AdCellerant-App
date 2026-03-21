@@ -147,33 +147,33 @@ export default function RepCard({
       </div>
 
       {/* Scorecard tiles — 2 rows */}
-      <div className="px-4 pb-4 mt-auto flex flex-col gap-3">
+      <div className="px-3 pb-3 mt-auto flex flex-col" style={{ gap: 8 }}>
         {/* ROW 1 — Current month */}
         <div>
           <p
-            className="text-center font-bold uppercase mb-1.5"
+            className="text-center font-bold uppercase mb-1"
             style={{ fontSize: 11, color: "#FF4A2D", letterSpacing: 1 }}
           >
             {currentMonthLong}
           </p>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4" style={{ gap: 4 }}>
             <RepStatTile
-              label="Booked"
+              label="BKD"
               value={hasData ? formatShort(curBooked) : "—"}
               color={curBooked > 0 ? "text-orange" : "text-muted"}
             />
             <RepStatTile
-              label="Target"
+              label="TGT"
               value={hasData ? formatShort(curTarget) : "—"}
               color="text-white"
             />
             <RepStatTile
-              label="Achieved"
-              value={isRamp && !hasData ? "Ramping" : (hasData && curTarget > 0 ? `${curAtt}%` : "—")}
+              label="ATT"
+              value={isRamp && !hasData ? "Ramp" : (hasData && curTarget > 0 ? `${curAtt}%` : "—")}
               color={isRamp && !hasData ? "text-amber" : (hasData && curTarget > 0 ? achievedColor(curAtt) : "text-muted")}
             />
             <RepStatTile
-              label="Days Rem"
+              label="DAYS"
               value={`${daysRemain}`}
               color="text-white"
             />
@@ -183,29 +183,29 @@ export default function RepCard({
         {/* ROW 2 — Next month */}
         <div>
           <p
-            className="text-center font-bold uppercase mb-1.5"
+            className="text-center font-bold uppercase mb-1"
             style={{ fontSize: 11, color: "#FF4A2D", letterSpacing: 1 }}
           >
             {nextMonthLong}
           </p>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4" style={{ gap: 4 }}>
             <RepStatTile
-              label="Booked"
+              label="BKD"
               value={nxtBooked > 0 ? formatShort(nxtBooked) : "—"}
               color={nxtBooked > 0 ? "text-orange" : "text-muted"}
             />
             <RepStatTile
-              label="Target"
+              label="TGT"
               value={nxtTarget > 0 ? formatShort(nxtTarget) : "—"}
               color="text-white"
             />
             <RepStatTile
-              label="Achieved"
+              label="ATT"
               value={nxtTarget > 0 ? `${nxtAtt}%` : "—"}
               color={nxtTarget > 0 ? achievedColor(nxtAtt) : "text-muted"}
             />
             <RepStatTile
-              label="Q1 Bkd"
+              label="Q1"
               value={q1Booked > 0 ? formatShort(q1Booked) : "—"}
               color={q1Booked > 0 ? "text-green" : "text-muted"}
             />
