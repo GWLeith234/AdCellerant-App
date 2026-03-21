@@ -5,14 +5,16 @@ interface FlagBadgeProps {
   size?: number;
 }
 
-export default function FlagBadge({ country, size = 20 }: FlagBadgeProps) {
+export default function FlagBadge({ country, size = 22 }: FlagBadgeProps) {
   if (country === "ca") {
     return (
       <div
-        className="absolute -bottom-1 -right-1"
         style={{
-          width: size + 2,
-          height: size + 2,
+          position: "absolute",
+          bottom: 0,
+          right: 0,
+          width: 22,
+          height: 22,
           borderRadius: "50%",
           overflow: "hidden",
           border: "2px solid #0D1B2E",
@@ -22,7 +24,7 @@ export default function FlagBadge({ country, size = 20 }: FlagBadgeProps) {
           background: "#fff",
         }}
       >
-        <svg viewBox="0 0 40 20" width={size + 6} height={(size + 6) / 2}>
+        <svg viewBox="0 0 40 20" width="26" height="13">
           <rect x="0" y="0" width="10" height="20" fill="#FF0000" />
           <rect x="10" y="0" width="20" height="20" fill="#FFFFFF" />
           <rect x="30" y="0" width="10" height="20" fill="#FF0000" />
