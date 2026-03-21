@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import AdCellerantLogo from "./AdCellerantLogo";
 import { useRevenueData } from "@/lib/RevenueDataContext";
+import { ADCELLERANT_ICON_BASE64 } from "@/lib/logo-data";
 
 /* ── SVG Skylines ─────────────────────────────────────── */
 
@@ -243,12 +243,10 @@ function LondonSkyline() {
 function WireframeGlobe() {
   return (
     <svg
-      width="28"
-      height="28"
       viewBox="0 0 28 28"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{ flexShrink: 0 }}
+      className="topbar-globe"
     >
       {/* Outer circle */}
       <circle cx="14" cy="14" r="12" stroke="#4FA3D1" strokeWidth="0.8" />
@@ -268,19 +266,6 @@ function WireframeGlobe() {
 
 const orb = "var(--font-orbitron), monospace";
 
-const navBtnStyle: React.CSSProperties = {
-  fontFamily: orb,
-  fontSize: 12,
-  color: "#F0F4F8",
-  letterSpacing: 1,
-  background: "transparent",
-  border: "1px solid #2A3F5C",
-  padding: "4px 12px",
-  borderRadius: 6,
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-};
-
 function formatUploadTimestamp(iso: string | null): string {
   if (!iso) return "not uploaded";
   const d = new Date(iso);
@@ -292,6 +277,16 @@ function formatUploadTimestamp(iso: string | null): string {
   const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12 || 12;
   return `${month} ${day}, ${hours}:${mins} ${ampm}`;
+}
+
+function formatUploadTimestampShort(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  let hours = d.getHours();
+  const mins = d.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${hours}:${mins} ${ampm}`;
 }
 
 export default function Topbar() {
@@ -345,190 +340,247 @@ export default function Topbar() {
 
   const hubspotDisplay = formatUploadTimestamp(csvUploadedAt);
   const revenueDisplay = formatUploadTimestamp(excelUploadedAt);
+  const hubspotShort = formatUploadTimestampShort(csvUploadedAt);
+  const revenueShort = formatUploadTimestampShort(excelUploadedAt);
+
+  const navBtnBase: React.CSSProperties = {
+    fontFamily: orb,
+    color: "#F0F4F8",
+    letterSpacing: 1,
+    background: "transparent",
+    border: "1px solid #2A3F5C",
+    borderRadius: 6,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
 
   return (
-    <header
-      style={{
-        height: 80,
-        background: "#0B1624",
-        borderBottom: "0.5px solid #1E3A5F",
-        display: "flex",
-        alignItems: "center",
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        width: "100%",
-        overflow: "hidden",
-      }}
-    >
-      {/* ── GROUP 1: Logo area ── */}
-      <div
+    <>
+      {/* Responsive styles */}
+      <style>{`
+        .topbar-globe { width: 28px; height: 28px; flex-shrink: 0; }
+        .topbar-flame { height: 48px; width: auto; }
+        .topbar-cmd { font-size: 16px; }
+        .topbar-ctr { font-size: 11px; }
+        .topbar-nav-btn { font-size: 12px; padding: 4px 12px; }
+        .topbar-nav-label { display: inline; }
+        .topbar-indicator { font-size: 10px; }
+        .topbar-indicator-val { font-size: 10px; }
+        .topbar-indicator-mobile { display: none !important; }
+        .topbar-city-label { font-size: 9px; }
+        .topbar-city-time { font-size: 13px; }
+        .topbar-city-date { font-size: 13px; display: inline; }
+        .topbar-city-dot { display: inline; }
+        .topbar-skyline { display: block; }
+        .topbar-divider { display: block; }
+        .topbar-header { height: 80px; flex-direction: row; flex-wrap: nowrap; }
+        .topbar-row1 { display: contents; }
+        .topbar-row2 { display: contents; }
+        .topbar-clocks { display: flex; flex: 1; }
+
+        @media (max-width: 767px) {
+          .topbar-header { height: auto; flex-direction: column; flex-wrap: nowrap; }
+          .topbar-row1 {
+            display: flex; align-items: center; width: 100%;
+            padding: 6px 10px; gap: 6px; justify-content: space-between;
+          }
+          .topbar-row2 {
+            display: flex; align-items: center; width: 100%;
+            padding: 2px 10px 6px; gap: 8px; justify-content: space-between;
+          }
+          .topbar-globe { width: 20px; height: 20px; }
+          .topbar-flame { height: 28px; }
+          .topbar-cmd { font-size: 12px; }
+          .topbar-ctr { font-size: 9px; }
+          .topbar-nav-btn { font-size: 11px; padding: 3px 8px; }
+          .topbar-nav-label { display: none; }
+          .topbar-indicator { font-size: 8px; }
+          .topbar-indicator-val { font-size: 8px; }
+          .topbar-indicator-mobile { display: inline !important; }
+          .topbar-city-label { font-size: 8px; }
+          .topbar-city-time { font-size: 12px; }
+          .topbar-city-date { display: none; }
+          .topbar-city-dot { display: none; }
+          .topbar-skyline { display: none; }
+          .topbar-divider { display: none; }
+          .topbar-clocks { display: flex; flex: 0 1 auto; gap: 2px; }
+        }
+      `}</style>
+
+      <header
+        className="topbar-header"
         style={{
+          background: "#0B1624",
+          borderBottom: "0.5px solid #1E3A5F",
           display: "flex",
           alignItems: "center",
-          padding: "0 16px",
-          gap: 10,
-          flexShrink: 0,
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          width: "100%",
+          maxWidth: "100vw",
+          overflow: "hidden",
         }}
       >
-        <AdCellerantLogo />
-        <WireframeGlobe />
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          <span
-            style={{
-              fontFamily: orb,
-              fontSize: 16,
-              fontWeight: 700,
-              color: "#FF4A2D",
-              letterSpacing: 3,
-              textTransform: "uppercase",
-              lineHeight: 1.1,
-            }}
-          >
-            COMMAND
-          </span>
-          <span
-            style={{
-              fontFamily: orb,
-              fontSize: 11,
-              fontWeight: 400,
-              color: "#FF4A2D",
-              letterSpacing: 3,
-              textTransform: "uppercase",
-              lineHeight: 1.1,
-            }}
-          >
-            CENTER
-          </span>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
-
-      {/* ── GROUP 2: Navigation buttons ── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "0 12px",
-          gap: 6,
-          flexShrink: 0,
-        }}
-      >
-        {!isOnDashboard && (
-          <button
-            onClick={() => router.push("/dashboard")}
-            style={navBtnStyle}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
-          >
-            ← Dashboard
-          </button>
-        )}
-        <button
-          onClick={() => window.location.reload()}
-          style={navBtnStyle}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
-        >
-          ↻ Refresh
-        </button>
-        <button
-          onClick={() => router.push("/admin")}
-          style={navBtnStyle}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
-        >
-          ⚙ Admin
-        </button>
-      </div>
-
-      {/* Divider */}
-      <div style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
-
-      {/* ── GROUP 3: Data freshness indicators (stacked) ── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          padding: "0 12px",
-          gap: 16,
-          flexShrink: 0,
-          maxWidth: 200,
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={{ fontFamily: orb, fontSize: 10, color: "#6B7F96" }}>HubSpot</span>
-          <span
-            style={{
-              fontFamily: orb,
-              fontSize: 10,
-              color: csvUploadedAt ? "#2ECC8A" : "#F5A623",
-            }}
-          >
-            {hubspotDisplay}
-          </span>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={{ fontFamily: orb, fontSize: 10, color: "#6B7F96" }}>Revenue</span>
-          <span
-            style={{
-              fontFamily: orb,
-              fontSize: 10,
-              color: excelUploadedAt ? "#2ECC8A" : "#F5A623",
-            }}
-          >
-            {revenueDisplay}
-          </span>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
-
-      {/* ── GROUP 4: City clocks ── */}
-      <div style={{ display: "flex", flex: 1 }}>
-        {cities.map((city, i) => (
-          <div
-            key={city.label}
-            style={{
-              flex: 1,
-              borderRight: i < cities.length - 1 ? "0.5px solid #1E3A5F" : "none",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              paddingBottom: 4,
-              overflow: "hidden",
-            }}
-          >
-            <div style={{ maxHeight: 40, overflow: "hidden" }}>
-              <city.Skyline />
+        {/* ── ROW 1 (on mobile): Logo + Globe + Title | Nav buttons ── */}
+        <div className="topbar-row1">
+          {/* Logo area */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }} className="topbar-logo-area">
+            <div style={{ display: "flex", alignItems: "center", padding: "0 0 0 6px" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={ADCELLERANT_ICON_BASE64}
+                alt="AdCellerant"
+                className="topbar-flame"
+                style={{ mixBlendMode: "screen", display: "block" }}
+              />
             </div>
-            <span
-              style={{
-                fontFamily: orb,
-                fontSize: 9,
-                fontWeight: 700,
-                color: "#FF4A2D",
-                letterSpacing: 1.5,
-                textTransform: "uppercase",
-                marginTop: 1,
-              }}
-            >
-              {city.label}
-            </span>
-            <span style={{ fontFamily: orb, lineHeight: 1.2 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#F0F4F8" }}>
-                {city.time.slice(0, 5)}
+            <WireframeGlobe />
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              <span
+                className="topbar-cmd"
+                style={{
+                  fontFamily: orb,
+                  fontWeight: 700,
+                  color: "#FF4A2D",
+                  letterSpacing: 3,
+                  textTransform: "uppercase",
+                  lineHeight: 1.1,
+                }}
+              >
+                COMMAND
               </span>
-              <span style={{ fontSize: 13, color: "#6B7F96" }}> · </span>
-              <span style={{ fontSize: 13, color: "#6B7F96" }}>{city.date}</span>
-            </span>
+              <span
+                className="topbar-ctr"
+                style={{
+                  fontFamily: orb,
+                  fontWeight: 400,
+                  color: "#FF4A2D",
+                  letterSpacing: 3,
+                  textTransform: "uppercase",
+                  lineHeight: 1.1,
+                }}
+              >
+                CENTER
+              </span>
+            </div>
           </div>
-        ))}
-      </div>
-    </header>
+
+          {/* Divider (desktop only) */}
+          <div className="topbar-divider" style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
+
+          {/* Navigation buttons */}
+          <div style={{ display: "flex", alignItems: "center", padding: "0 6px", gap: 6, flexShrink: 0 }}>
+            {!isOnDashboard && (
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="topbar-nav-btn"
+                style={navBtnBase}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
+              >
+                ←<span className="topbar-nav-label"> Dashboard</span>
+              </button>
+            )}
+            <button
+              onClick={() => window.location.reload()}
+              className="topbar-nav-btn"
+              style={navBtnBase}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
+            >
+              ↻<span className="topbar-nav-label"> Refresh</span>
+            </button>
+            <button
+              onClick={() => router.push("/admin")}
+              className="topbar-nav-btn"
+              style={navBtnBase}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4FA3D1"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2A3F5C"; }}
+            >
+              ⚙<span className="topbar-nav-label"> Admin</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Divider (desktop only) */}
+        <div className="topbar-divider" style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
+
+        {/* ── ROW 2 (on mobile): Data indicators | City clocks ── */}
+        <div className="topbar-row2">
+          {/* Data freshness indicators */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexShrink: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span className="topbar-indicator" style={{ fontFamily: orb, color: "#6B7F96" }}>HubSpot</span>
+              <span
+                className="topbar-indicator-val"
+                style={{ fontFamily: orb, color: csvUploadedAt ? "#2ECC8A" : "#F5A623" }}
+              >
+                {/* Desktop: full timestamp, Mobile: time only */}
+                <span className="topbar-nav-label">{hubspotDisplay}</span>
+                <span style={{ display: "none" }} className="topbar-indicator-mobile">{csvUploadedAt ? hubspotShort : "—"}</span>
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span className="topbar-indicator" style={{ fontFamily: orb, color: "#6B7F96" }}>Revenue</span>
+              <span
+                className="topbar-indicator-val"
+                style={{ fontFamily: orb, color: excelUploadedAt ? "#2ECC8A" : "#F5A623" }}
+              >
+                <span className="topbar-nav-label">{revenueDisplay}</span>
+                <span style={{ display: "none" }} className="topbar-indicator-mobile">{excelUploadedAt ? revenueShort : "—"}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Divider (desktop only) */}
+          <div className="topbar-divider" style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
+
+          {/* City clocks */}
+          <div className="topbar-clocks">
+            {cities.map((city, i) => (
+              <div
+                key={city.label}
+                style={{
+                  flex: 1,
+                  borderRight: i < cities.length - 1 ? "0.5px solid #1E3A5F" : "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  paddingBottom: 4,
+                  overflow: "hidden",
+                  minWidth: 0,
+                }}
+              >
+                <div className="topbar-skyline" style={{ maxHeight: 40, overflow: "hidden" }}>
+                  <city.Skyline />
+                </div>
+                <span
+                  className="topbar-city-label"
+                  style={{
+                    fontFamily: orb,
+                    fontWeight: 700,
+                    color: "#FF4A2D",
+                    letterSpacing: 1.5,
+                    textTransform: "uppercase",
+                    marginTop: 1,
+                  }}
+                >
+                  {city.label}
+                </span>
+                <span style={{ fontFamily: orb, lineHeight: 1.2, whiteSpace: "nowrap" }}>
+                  <span className="topbar-city-time" style={{ fontWeight: 600, color: "#F0F4F8" }}>
+                    {city.time.slice(0, 5)}
+                  </span>
+                  <span className="topbar-city-dot" style={{ color: "#6B7F96" }}> · </span>
+                  <span className="topbar-city-date" style={{ color: "#6B7F96" }}>{city.date}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </header>
+    </>
   );
 }

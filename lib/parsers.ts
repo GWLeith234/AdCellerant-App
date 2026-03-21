@@ -127,6 +127,7 @@ export function parseBookedCSV(file: File): Promise<BookedByRepMonth> {
 export function parseExcelWorkbook(file: File): Promise<{
   booked: BookedByRepMonth;
   targets: TargetsByRepMonth;
+  sheetNames: string[];
 }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -137,8 +138,9 @@ export function parseExcelWorkbook(file: File): Promise<{
 
         const booked = parseWoWTrackerSheet(workbook);
         const targets = parseTargetsSheet(workbook);
+        const sheetNames = workbook.SheetNames;
 
-        resolve({ booked, targets });
+        resolve({ booked, targets, sheetNames });
       } catch (err) {
         reject(err instanceof Error ? err : new Error("Excel parse error"));
       }
