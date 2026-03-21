@@ -5,6 +5,15 @@ import FileUpload, { type UploadZoneState } from "./FileUpload";
 import { parseBookedCSV, parseExcelWorkbook, parseHubSpotDealsCSV } from "@/lib/parsers";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
 import type { ParsedDeal } from "@/lib/hubspot";
+import { useRevenueData } from "@/lib/RevenueDataContext";
+
+function formatUploadTimestamp(iso: string): string {
+  const d = new Date(iso);
+  const month = d.toLocaleString("en-US", { month: "short" });
+  const day = d.getDate();
+  const time = d.toLocaleString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  return `${month} ${day}, ${time}`;
+}
 
 interface DataUploadPanelProps {
   onDataLoaded: (data: {
@@ -25,6 +34,8 @@ export default function DataUploadPanel({
   hasExistingData = false,
   hasExistingDeals = false,
 }: DataUploadPanelProps) {
+  const { csvUploadedAt, excelUploadedAt, setCsvUploadedAt, setExcelUploadedAt } = useRevenueData();
+
   // Staged files (not yet processed)
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [xlFile, setXlFile] = useState<File | null>(null);
@@ -127,6 +138,7 @@ export default function DataUploadPanel({
         setCsvLoadedName(csvFile.name);
         setCsvStagedName(null);
         setCsvFile(null);
+        setCsvUploadedAt(new Date().toISOString());
       } catch (err) {
         const msg = err instanceof Error ? err.message : "CSV parse error";
         setCsvError(msg);
@@ -147,6 +159,7 @@ export default function DataUploadPanel({
         setXlLoadedName(xlFile.name);
         setXlStagedName(null);
         setXlFile(null);
+        setExcelUploadedAt(new Date().toISOString());
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Excel parse error";
         setXlError(msg);
@@ -183,13 +196,18 @@ export default function DataUploadPanel({
     }
 
     setProcessing(false);
-  }, [csvFile, xlFile, dealsFile, onDataLoaded, onDealsLoaded]);
+  }, [csvFile, xlFile, dealsFile, onDataLoaded, onDealsLoaded, setCsvUploadedAt, setExcelUploadedAt]);
 
   const hasStaged = !!csvFile || !!xlFile || !!dealsFile;
   const showButton = hasStaged || loadSuccess;
 
   return (
     <div className="mb-6">
+      {/* Snapshot indicator */}
+      <p style={{ color: "#6B7F96", fontSize: 11, fontStyle: "italic", marginBottom: 10 }}>
+        📊 Data from file uploads — not live
+      </p>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FileUpload
           label="Upload Booked Revenue CSV"
@@ -221,6 +239,26 @@ export default function DataUploadPanel({
           loadedFileName={dealsLoadedName ? `✓ Deals loaded (${dealsCount} deals)` : null}
           errorMessage={dealsError}
         />
+      </div>
+
+      {/* Upload timestamps */}
+      <div style={{ display: "flex", gap: 24, marginTop: 8, fontSize: 12 }}>
+        <span>
+          <span style={{ color: "#6B7F96" }}>HubSpot CSV: </span>
+          {csvUploadedAt ? (
+            <span style={{ color: "#F0F4F8" }}>uploaded {formatUploadTimestamp(csvUploadedAt)}</span>
+          ) : (
+            <span style={{ color: "#F5A623" }}>not uploaded</span>
+          )}
+        </span>
+        <span>
+          <span style={{ color: "#6B7F96" }}>Excel WoW: </span>
+          {excelUploadedAt ? (
+            <span style={{ color: "#F0F4F8" }}>uploaded {formatUploadTimestamp(excelUploadedAt)}</span>
+          ) : (
+            <span style={{ color: "#F5A623" }}>not uploaded</span>
+          )}
+        </span>
       </div>
 
       {/* Load button */}
