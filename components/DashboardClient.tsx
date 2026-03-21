@@ -3,14 +3,10 @@
 import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import type { AppAction } from "@/lib/types";
 import type { ParsedDeal } from "@/lib/hubspot";
-import { getRepConfig } from "@/lib/reps";
 import { useRevenueData } from "@/lib/RevenueDataContext";
 import { useDealData } from "@/lib/DealDataContext";
 import DealGridSkeleton from "./DealGridSkeleton";
 import TeamGrid from "./TeamGrid";
-import ScorecardPanel from "./ScorecardPanel";
-import RepHeader from "./RepHeader";
-import FocusedPipeline from "./FocusedPipeline";
 import DealDrawer from "./DealDrawer";
 import ResearchRequestModal from "./ResearchRequestModal";
 import SubNav from "./SubNav";
@@ -64,10 +60,9 @@ function reducer(state: DealState, action: AppAction): DealState {
 interface DashboardClientProps {
   userEmail: string;
   userName: string;
-  rep: string | null;
 }
 
-export default function DashboardClient({ userEmail, userName, rep }: DashboardClientProps) {
+export default function DashboardClient({ userEmail, userName }: DashboardClientProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { bookedByRepMonth, targetsByRepMonth } = useRevenueData();
   const { uploadedDeals, hasUploadedDeals } = useDealData();
@@ -129,14 +124,11 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
   const activeDeals = hasUploadedDeals ? uploadedDeals : state.deals;
   const isMock = hasUploadedDeals ? false : state.hubspotUnavailable;
 
-  const repConfig = rep ? getRepConfig(rep) : null;
-  const isFocused = !!rep && !!repConfig;
-
   return (
     <div>
       {/* Sub-navigation bar */}
       <SubNav
-        rep={rep}
+        rep={null}
         userEmail={userEmail}
         refreshing={refreshing}
         dealsLoading={state.dealsLoading && !hasUploadedDeals}
@@ -156,25 +148,12 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
       {/* Deals loading skeleton */}
       {state.dealsLoading && !hasUploadedDeals && (
         <div className="mb-6">
-          <DealGridSkeleton count={8} columns={isFocused ? 3 : 4} />
+          <DealGridSkeleton count={8} columns={4} />
         </div>
       )}
 
-      {/* Focused rep view */}
-      {(!state.dealsLoading || hasUploadedDeals) && isFocused && repConfig && (
-        <>
-          <RepHeader config={repConfig} />
-          <ScorecardPanel
-            config={repConfig}
-            booked={bookedByRepMonth}
-            targets={targetsByRepMonth}
-          />
-          <FocusedPipeline deals={activeDeals} rep={rep} onDealClick={setSelectedDeal} onResearchClick={setResearchDeal} />
-        </>
-      )}
-
       {/* Team view */}
-      {(!state.dealsLoading || hasUploadedDeals) && !isFocused && (
+      {(!state.dealsLoading || hasUploadedDeals) && (
         <TeamGrid
           deals={activeDeals}
           booked={bookedByRepMonth}

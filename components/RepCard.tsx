@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { RepConfig } from "@/lib/reps";
 import { REP_PHOTOS } from "@/lib/repPhotos";
 import FlagBadge from "./FlagBadge";
@@ -65,8 +64,6 @@ export default function RepCard({
   dimmed = false,
   onSelect,
 }: RepCardProps) {
-  const router = useRouter();
-
   const repBooked = booked[config.key] || {};
   const repTargets = targets[config.key] || {};
 
@@ -91,11 +88,7 @@ export default function RepCard({
   const hasData = curBooked > 0 || curTarget > 0 || nxtBooked > 0 || nxtTarget > 0;
 
   const handleClick = () => {
-    if (onSelect) {
-      onSelect();
-    } else {
-      router.push(`/dashboard/${config.key}`);
-    }
+    onSelect?.();
   };
 
   return (

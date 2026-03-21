@@ -5,7 +5,6 @@ export default function DashboardPage() {
     <DashboardClient
       userEmail="george.leith@adcellerant.com"
       userName="George Leith"
-      rep={null}
     />
   );
 }
