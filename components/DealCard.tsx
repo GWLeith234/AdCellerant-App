@@ -60,6 +60,7 @@ function ageColorFromWarmth(status: "warm" | "cooling" | "cold"): string {
 
 // Deal value colour
 function valueColor(deal: ParsedDeal): string {
+  if (deal.cat === "cw") return "#2ECC8A";
   const days = daysUntilClose(deal.closeDate);
   const isUrgent = days <= 2 && deal.cat !== "cw";
   if (isUrgent || deal.cat === "neg") return "#FF4A2D";
