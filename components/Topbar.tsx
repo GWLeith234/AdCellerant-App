@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AdCellerantLogo from "./AdCellerantLogo";
 
 /* ── SVG Skylines ─────────────────────────────────────── */
 
@@ -309,19 +310,8 @@ export default function Topbar() {
           flexShrink: 0,
         }}
       >
-        {/* A) AdCellerant icon */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logos/adcellerant-icon.png"
-          alt=""
-          style={{
-            width: 36,
-            height: 36,
-            objectFit: "contain",
-            mixBlendMode: "screen",
-            flexShrink: 0,
-          }}
-        />
+        {/* A) AdCellerant icon + wordmark */}
+        <AdCellerantLogo />
 
         {/* Vertical divider */}
         <div style={{ width: 1, height: 48, background: "#2A3F5C", flexShrink: 0 }} />
@@ -369,7 +359,7 @@ export default function Topbar() {
             >
               CENTER
             </span>
-          </div>
+          </span>
         </div>
       </div>
 

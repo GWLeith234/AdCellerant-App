@@ -81,8 +81,9 @@ function daysOverdue(closeDate: string): number {
 function closeDateColor(deal: ParsedDeal): string {
   if (!deal.closeDate || deal.cat === "cw") return "#6B7F96";
   const diff = daysOverdue(deal.closeDate);
-  if (diff > 0) return "#FF4A2D";
-  if (diff === 0) return "#FF4A2D";
+  if (diff > 0) return "#FF4A2D";    // overdue — red
+  if (diff === 0) return "#F5A623";   // today — amber
+  if (Math.abs(diff) <= 7) return "#F5A623"; // within a week — amber
   return "#6B7F96";
 }
 
@@ -318,10 +319,10 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
                   month: "short",
                 });
                 if (deal.cat === "cw") return dateStr;
-                if (diff > 0) return `${diff} day${diff === 1 ? "" : "s"} overdue`;
-                if (diff === 0) return "TODAY";
+                if (diff > 0) return <>{dateStr} — <strong style={{ color: "#FF4A2D" }}>OVERDUE</strong></>;
+                if (diff === 0) return <>{dateStr} — <strong style={{ color: "#F5A623" }}>TODAY</strong></>;
                 const absDiff = Math.abs(diff);
-                if (absDiff < 7) return `${dateStr} — in ${absDiff} day${absDiff === 1 ? "" : "s"}`;
+                if (absDiff <= 7) return `${dateStr} — ${absDiff}d`;
                 return dateStr;
               })()}
             </p>

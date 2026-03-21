@@ -162,7 +162,7 @@ export default function DashboardClient({ userEmail, userName, rep }: DashboardC
             booked={bookedByRepMonth}
             targets={targetsByRepMonth}
           />
-          <FocusedPipeline deals={activeDeals} rep={rep} onDealClick={setSelectedDeal} onResearchClick={handleResearchClick} />
+          <FocusedPipeline deals={activeDeals} rep={rep} onDealClick={setSelectedDeal} onResearchClick={setResearchDeal} />
         </>
       )}
 

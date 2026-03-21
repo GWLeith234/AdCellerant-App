@@ -71,10 +71,16 @@ function buildPeriods(
   booked: BookedByRepMonth,
   targets: TargetsByRepMonth,
 ): PeriodData[] {
-  // Use George's hard-coded data for george, otherwise fall back to context
   const isGeorge = repKey === "george";
-  const rb = isGeorge ? GEORGE_REVENUE_BOOKED : (booked[repKey] || {});
-  const rt = isGeorge ? GEORGE_REVENUE_TARGETS : (targets[repKey] || {});
+
+  // Prefer uploaded context data; fall back to hard-coded defaults for George
+  const contextBooked = booked[repKey];
+  const contextTargets = targets[repKey];
+  const hasUploadedBooked = contextBooked && Object.keys(contextBooked).length > 0;
+  const hasUploadedTargets = contextTargets && Object.keys(contextTargets).length > 0;
+
+  const rb = hasUploadedBooked ? contextBooked : (isGeorge ? GEORGE_REVENUE_BOOKED : {});
+  const rt = hasUploadedTargets ? contextTargets : (isGeorge ? GEORGE_REVENUE_TARGETS : {});
 
   // March
   const marRevBooked = rb["Mar"] || 0;
@@ -96,7 +102,7 @@ function buildPeriods(
 
   // Annual
   const annRevBooked = ALL_MONTHS.reduce((s, m) => s + (rb[m] || 0), 0);
-  const annRevTarget = (!hasUploaded && repKey === "george")
+  const annRevTarget = (isGeorge)
     ? GEORGE_ANNUAL_TARGET
     : ALL_MONTHS.reduce((s, m) => s + (rt[m] || 0), 0);
 
@@ -298,6 +304,20 @@ interface ScorecardPanelProps {
 
 export default function ScorecardPanel({ config, booked, targets }: ScorecardPanelProps) {
   const periods = buildPeriods(config.key, booked, targets);
+
+  // REV DEBUG — temporary: verify revenue numbers in Chrome DevTools
+  const marchPeriod = periods.find((p) => p.label === "MARCH");
+  if (marchPeriod) {
+    const att = marchPeriod.revTarget > 0
+      ? Math.round((marchPeriod.revBooked / marchPeriod.revTarget) * 100)
+      : 0;
+    console.log("REV DEBUG:", {
+      rep: config.key,
+      monthBooked: marchPeriod.revBooked,
+      monthTarget: marchPeriod.revTarget,
+      attainment: att,
+    });
+  }
 
   return (
     <div

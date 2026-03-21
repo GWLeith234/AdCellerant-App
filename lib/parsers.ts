@@ -190,9 +190,9 @@ function parseWoWTrackerSheet(workbook: XLSX.WorkBook): BookedByRepMonth {
     const amount = typeof valCell.v === "number" ? valCell.v : parseFloat(String(valCell.v).replace(/[$,]/g, ""));
     if (isNaN(amount) || amount === 0) continue;
 
-    // Store as team-level booked (will be merged if CSV also provides per-rep data)
-    if (!booked["_wow_total"]) booked["_wow_total"] = {};
-    booked["_wow_total"][month] = amount;
+    // Store as George's booked (WoW Tracker tracks George's CA+V revenue)
+    if (!booked["george"]) booked["george"] = {};
+    booked["george"][month] = amount;
   }
 
   return booked;
