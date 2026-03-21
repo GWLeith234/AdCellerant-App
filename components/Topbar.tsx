@@ -451,35 +451,36 @@ export default function Topbar() {
       {/* Divider */}
       <div style={{ width: 1, height: 40, background: "#2A3F5C", flexShrink: 0 }} />
 
-      {/* ── GROUP 3: Data freshness indicators ── */}
+      {/* ── GROUP 3: Data freshness indicators (stacked) ── */}
       <div
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           padding: "0 12px",
-          gap: 14,
+          gap: 16,
           flexShrink: 0,
+          maxWidth: 200,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ fontFamily: orb, fontSize: 11, color: "#6B7F96" }}>HubSpot:</span>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span style={{ fontFamily: orb, fontSize: 10, color: "#6B7F96" }}>HubSpot</span>
           <span
             style={{
               fontFamily: orb,
-              fontSize: 11,
-              color: csvUploadedAt ? "#F0F4F8" : "#F5A623",
+              fontSize: 10,
+              color: csvUploadedAt ? "#2ECC8A" : "#F5A623",
             }}
           >
             {hubspotDisplay}
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ fontFamily: orb, fontSize: 11, color: "#6B7F96" }}>Revenue:</span>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span style={{ fontFamily: orb, fontSize: 10, color: "#6B7F96" }}>Revenue</span>
           <span
             style={{
               fontFamily: orb,
-              fontSize: 11,
-              color: excelUploadedAt ? "#F0F4F8" : "#F5A623",
+              fontSize: 10,
+              color: excelUploadedAt ? "#2ECC8A" : "#F5A623",
             }}
           >
             {revenueDisplay}
@@ -510,7 +511,7 @@ export default function Topbar() {
             <span
               style={{
                 fontFamily: orb,
-                fontSize: 14,
+                fontSize: 10,
                 fontWeight: 700,
                 color: "#FF4A2D",
                 letterSpacing: 2,
@@ -523,7 +524,7 @@ export default function Topbar() {
             <span
               style={{
                 fontFamily: orb,
-                fontSize: 22,
+                fontSize: 16,
                 fontWeight: 600,
                 color: "#F0F4F8",
                 letterSpacing: 1,
