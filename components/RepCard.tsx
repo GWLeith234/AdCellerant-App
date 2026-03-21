@@ -23,10 +23,32 @@ function formatShort(val: number): string {
   return `$${val.toFixed(0)}`;
 }
 
-function ragColor(pct: number): string {
-  if (pct >= 100) return "text-green";
-  if (pct >= 75) return "text-amber";
+function achievedColor(pct: number): string {
+  if (pct >= 80) return "text-green";
+  if (pct >= 50) return "text-amber";
   return "text-orange";
+}
+
+function getWorkingDaysRemaining(): number {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  let count = 0;
+  for (let d = now.getDate() + 1; d <= lastDay; d++) {
+    const day = new Date(year, month, d).getDay();
+    if (day !== 0 && day !== 6) count++;
+  }
+  return count;
+}
+
+function getMonthNames() {
+  const now = new Date();
+  const currentMonthLong = now.toLocaleString("en-US", { month: "long" }).toUpperCase();
+  const nextMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const nextMonthLong = nextMonthDate.toLocaleString("en-US", { month: "long" }).toUpperCase();
+  const nextMonthShort = nextMonthDate.toLocaleString("en-US", { month: "short" });
+  return { currentMonthLong, nextMonthLong, nextMonthShort };
 }
 
 export default function RepCard({
@@ -43,19 +65,24 @@ export default function RepCard({
   const repTargets = targets[config.key] || {};
 
   // Current month stats
-  const marBooked = repBooked[currentMonth] || 0;
-  const marTarget = repTargets[currentMonth] || 0;
-  const marAtt = marTarget > 0 ? Math.round((marBooked / marTarget) * 100) : 0;
+  const curBooked = repBooked[currentMonth] || 0;
+  const curTarget = repTargets[currentMonth] || 0;
+  const curAtt = curTarget > 0 ? Math.round((curBooked / curTarget) * 100) : 0;
 
-  // REV DEBUG — temporary: verify revenue numbers in Chrome DevTools
-  console.log("REV DEBUG:", { rep: config.key, monthBooked: marBooked, monthTarget: marTarget, attainment: marAtt });
+  // Next month stats
+  const { currentMonthLong, nextMonthLong, nextMonthShort } = getMonthNames();
+  const nxtBooked = repBooked[nextMonthShort] || 0;
+  const nxtTarget = repTargets[nextMonthShort] || 0;
+  const nxtAtt = nxtTarget > 0 ? Math.round((nxtBooked / nxtTarget) * 100) : 0;
 
   // Q1 booked (Jan + Feb + Mar)
   const q1Months = ["Jan", "Feb", "Mar"];
   const q1Booked = q1Months.reduce((sum, m) => sum + (repBooked[m] || 0), 0);
 
-  // Ramp stats for Alex
+  const daysRemain = getWorkingDaysRemaining();
+
   const isRamp = config.isRamp;
+  const hasData = curBooked > 0 || curTarget > 0 || nxtBooked > 0 || nxtTarget > 0;
 
   return (
     <div
@@ -108,39 +135,71 @@ export default function RepCard({
         </div>
       </div>
 
-      {/* Stat tiles 2x2 */}
-      <div className="px-4 pb-4 mt-auto">
-        {isRamp ? (
-          <div className="grid grid-cols-2 gap-2">
-            <RepStatTile label="Ramp" value="Active" color="text-amber" />
-            <RepStatTile label="Ann Tgt" value={formatShort(repTargets["Annual"] || 0)} color="text-white" />
-            <RepStatTile label="UK%" value="—" color="text-blue" />
-            <RepStatTile label="1st Deal" value="Pending" color="text-muted" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
+      {/* Scorecard tiles — 2 rows */}
+      <div className="px-4 pb-4 mt-auto flex flex-col gap-3">
+        {/* ROW 1 — Current month */}
+        <div>
+          <p
+            className="text-center font-bold uppercase mb-1.5"
+            style={{ fontSize: 11, color: "#FF4A2D", letterSpacing: 1 }}
+          >
+            {currentMonthLong}
+          </p>
+          <div className="grid grid-cols-4 gap-2">
             <RepStatTile
-              label="Mar Bkd"
-              value={formatShort(marBooked)}
-              color={marBooked > 0 ? "text-green" : "text-muted"}
+              label="Booked"
+              value={hasData ? formatShort(curBooked) : "—"}
+              color={curBooked > 0 ? "text-orange" : "text-muted"}
             />
             <RepStatTile
-              label="Mar Tgt"
-              value={formatShort(marTarget)}
+              label="Target"
+              value={hasData ? formatShort(curTarget) : "—"}
               color="text-white"
             />
             <RepStatTile
-              label="Mar Att"
-              value={marTarget > 0 ? `${marAtt}%` : "—"}
-              color={marTarget > 0 ? ragColor(marAtt) : "text-muted"}
+              label="Achieved"
+              value={isRamp && !hasData ? "Ramping" : (hasData && curTarget > 0 ? `${curAtt}%` : "—")}
+              color={isRamp && !hasData ? "text-amber" : (hasData && curTarget > 0 ? achievedColor(curAtt) : "text-muted")}
+            />
+            <RepStatTile
+              label="Days Rem"
+              value={`${daysRemain}`}
+              color="text-white"
+            />
+          </div>
+        </div>
+
+        {/* ROW 2 — Next month */}
+        <div>
+          <p
+            className="text-center font-bold uppercase mb-1.5"
+            style={{ fontSize: 11, color: "#FF4A2D", letterSpacing: 1 }}
+          >
+            {nextMonthLong}
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            <RepStatTile
+              label="Booked"
+              value={nxtBooked > 0 ? formatShort(nxtBooked) : "—"}
+              color={nxtBooked > 0 ? "text-orange" : "text-muted"}
+            />
+            <RepStatTile
+              label="Target"
+              value={nxtTarget > 0 ? formatShort(nxtTarget) : "—"}
+              color="text-white"
+            />
+            <RepStatTile
+              label="Achieved"
+              value={nxtTarget > 0 ? `${nxtAtt}%` : "—"}
+              color={nxtTarget > 0 ? achievedColor(nxtAtt) : "text-muted"}
             />
             <RepStatTile
               label="Q1 Bkd"
-              value={formatShort(q1Booked)}
+              value={q1Booked > 0 ? formatShort(q1Booked) : "—"}
               color={q1Booked > 0 ? "text-green" : "text-muted"}
             />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
