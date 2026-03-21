@@ -14,6 +14,9 @@ interface RepCardProps {
   booked: BookedByRepMonth;
   targets: TargetsByRepMonth;
   currentMonth: string;
+  selected?: boolean;
+  dimmed?: boolean;
+  onSelect?: () => void;
 }
 
 function formatShort(val: number): string {
@@ -58,6 +61,9 @@ export default function RepCard({
   booked,
   targets,
   currentMonth,
+  selected = false,
+  dimmed = false,
+  onSelect,
 }: RepCardProps) {
   const router = useRouter();
 
@@ -84,10 +90,22 @@ export default function RepCard({
   const isRamp = config.isRamp;
   const hasData = curBooked > 0 || curTarget > 0 || nxtBooked > 0 || nxtTarget > 0;
 
+  const handleClick = () => {
+    if (onSelect) {
+      onSelect();
+    } else {
+      router.push(`/dashboard/${config.key}`);
+    }
+  };
+
   return (
     <div
-      onClick={() => router.push(`/dashboard/${config.key}`)}
-      className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:border-blue/50 transition-colors flex flex-col"
+      onClick={handleClick}
+      className="bg-card rounded-xl overflow-hidden cursor-pointer transition-all flex flex-col"
+      style={{
+        border: selected ? "2px solid #4FA3D1" : "1px solid var(--border)",
+        opacity: dimmed ? 0.6 : 1,
+      }}
     >
       {/* Top gradient strip */}
       <div

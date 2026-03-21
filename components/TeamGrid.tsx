@@ -20,21 +20,28 @@ type TabKey = "all" | "neg" | "prop" | "ent" | "leads";
 
 export default function TeamGrid({ deals, booked, targets, onDealClick, onResearchClick }: TeamGridProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [selectedRep, setSelectedRep] = useState<string | null>(null);
 
   // Current month label (short name)
   const currentMonth = new Date().toLocaleString("en-US", { month: "short" });
 
-  // Counts per category
+  // Filter deals by selected rep
+  const repFilteredDeals = useMemo(() => {
+    if (!selectedRep) return deals;
+    return deals.filter((d) => d.rep === selectedRep);
+  }, [deals, selectedRep]);
+
+  // Counts per category (based on rep-filtered deals)
   const counts = useMemo(() => {
-    const c = { all: deals.length, neg: 0, prop: 0, ent: 0, leads: 0 };
-    for (const d of deals) {
+    const c = { all: repFilteredDeals.length, neg: 0, prop: 0, ent: 0, leads: 0 };
+    for (const d of repFilteredDeals) {
       if (d.cat === "neg") c.neg++;
       else if (d.cat === "prop") c.prop++;
       else if (d.cat === "ent") c.ent++;
       else if (d.cat === "leads") c.leads++;
     }
     return c;
-  }, [deals]);
+  }, [repFilteredDeals]);
 
   const tabs: Tab[] = [
     { key: "all", label: "All Deals", count: counts.all },
@@ -45,9 +52,18 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
   ];
 
   const filteredDeals = useMemo(() => {
-    if (activeTab === "all") return deals;
-    return deals.filter((d) => d.cat === activeTab);
-  }, [deals, activeTab]);
+    if (activeTab === "all") return repFilteredDeals;
+    return repFilteredDeals.filter((d) => d.cat === activeTab);
+  }, [repFilteredDeals, activeTab]);
+
+  const selectedRepConfig = selectedRep
+    ? REP_CONFIGS.find((r) => r.key === selectedRep)
+    : null;
+
+  const handleRepSelect = (key: string) => {
+    setSelectedRep((prev) => (prev === key ? null : key));
+    setActiveTab("all");
+  };
 
   return (
     <div>
@@ -65,10 +81,38 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
               booked={booked}
               targets={targets}
               currentMonth={currentMonth}
+              selected={selectedRep === config.key}
+              dimmed={!!selectedRep && selectedRep !== config.key}
+              onSelect={() => handleRepSelect(config.key)}
             />
           );
         })}
       </div>
+
+      {/* Filter badge */}
+      {selectedRepConfig && (
+        <div className="mt-4 flex items-center gap-2">
+          <span style={{ fontSize: 12, color: "#6B7F96" }}>Showing:</span>
+          <span
+            style={{
+              background: "#4FA3D1",
+              color: "#FFFFFF",
+              borderRadius: 20,
+              padding: "2px 10px",
+              fontSize: 11,
+              fontWeight: 600,
+            }}
+          >
+            {selectedRepConfig.name}
+          </span>
+          <span
+            onClick={() => setSelectedRep(null)}
+            style={{ fontSize: 11, color: "#4FA3D1", cursor: "pointer" }}
+          >
+            ✕ clear
+          </span>
+        </div>
+      )}
 
       {/* Deal tabs + grid */}
       <div className="mt-6">
