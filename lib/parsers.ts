@@ -355,15 +355,35 @@ function daysSince(dateStr: string): number {
 }
 
 /**
+ * Normalize a header key for comparison: lowercase, strip whitespace/underscores/hyphens.
+ */
+function normalizeKey(s: string): string {
+  return s.trim().toLowerCase().replace(/[\s_\-]+/g, "");
+}
+
+/**
  * Find a column value by trying multiple possible header names.
  * Returns the first match found (case-insensitive, whitespace-normalized).
  */
 function findCol(row: Record<string, string>, ...candidates: string[]): string {
   for (const c of candidates) {
-    const key = Object.keys(row).find(
-      (k) => k.trim().toLowerCase().replace(/[\s_]+/g, "") === c.toLowerCase().replace(/[\s_]+/g, "")
-    );
+    const norm = normalizeKey(c);
+    const key = Object.keys(row).find((k) => normalizeKey(k) === norm);
     if (key && row[key] !== undefined) return row[key].trim();
+  }
+  return "";
+}
+
+/**
+ * Scan ALL columns of a row for a value that matches a known owner name.
+ * Returns the rep key or "" if no match found.
+ * This is a last-resort fallback when column name matching fails.
+ */
+function findRepByValueScan(row: Record<string, string>): string {
+  for (const val of Object.values(row)) {
+    if (!val) continue;
+    const rep = OWNER_NAME_TO_REP[val.trim().toLowerCase()];
+    if (rep) return rep;
   }
   return "";
 }
@@ -391,6 +411,8 @@ export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[];
 
         const totalRows = rows.length;
         const deals: ParsedDeal[] = [];
+        let firstRowLogged = false;
+        let skippedNoOwner = 0;
 
         for (const row of rows) {
           try {
@@ -421,10 +443,24 @@ export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[];
               if (!isNaN(parsed.getTime())) closeDate = parsed.toISOString();
             }
 
-            // Owner: prefer name-based resolution (more reliable in CSV exports)
-            // HubSpot CSV "HubSpot Owner Id" column can contain portal owner, not deal owner
-            const ownerName = findCol(row, "Deal owner", "Dealowner", "Deal Owner");
-            const ownerId = findCol(row, "HubSpotOwnerID", "HubSpot Owner ID", "hubspot_owner_id");
+            // Owner: try multiple column names, prefer name-based resolution
+            const ownerName = findCol(row, "Deal owner", "Dealowner", "Deal Owner", "Owner", "HubSpot Owner", "Sales Rep");
+            const ownerId = findCol(row, "HubSpotOwnerID", "HubSpot Owner ID", "HubSpot Owner Id", "hubspot_owner_id", "Owner ID", "OwnerID");
+
+            // Log column headers on first row for debugging
+            if (deals.length === 0 && firstRowLogged === false) {
+              firstRowLogged = true;
+              const headers = Object.keys(row);
+              console.log("=== CSV COLUMN HEADERS ===", headers);
+              console.log("=== OWNER RESOLUTION ===", {
+                ownerNameCol: ownerName ? `"${ownerName}"` : "(not found)",
+                ownerIdCol: ownerId ? `"${ownerId}"` : "(not found)",
+                headers: headers.filter((h) => {
+                  const n = h.toLowerCase();
+                  return n.includes("owner") || n.includes("rep") || n.includes("assign");
+                }),
+              });
+            }
 
             const dealId = findCol(row, "RecordID", "Record ID", "DealID", "Deal ID", "hs_object_id");
             const company = findCol(
@@ -439,7 +475,7 @@ export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[];
             const persona = findCol(row, "Persona", "Deal Persona", "persona");
             const createDate = findCol(row, "CreateDate", "Create Date", "Create date", "Created");
 
-            // Determine rep: name first → ID fallback → company fallback
+            // Determine rep: name first → ID fallback → value scan → company fallback
             let rep = "";
 
             // 1. Owner name → direct rep mapping (most reliable for CSV)
@@ -452,11 +488,19 @@ export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[];
               rep = DEAL_OWNER_MAP[ownerId.trim()] || "";
             }
 
-            // 3. Fall back to company name detection
+            // 3. Last resort: scan ALL column values for a known owner name
+            if (!rep) {
+              rep = findRepByValueScan(row);
+            }
+
+            // 4. Fall back to company name detection
             if (!rep && company.toLowerCase().includes("vendasta")) {
               rep = "vendasta";
             }
-            if (!rep) continue; // skip deals with unrecognized owners
+            if (!rep) {
+              skippedNoOwner++;
+              continue; // skip deals with unrecognized owners
+            }
 
             const stageAge = createDate ? daysSince(createDate) : 0;
 
@@ -523,9 +567,10 @@ export function parseHubSpotDealsCSV(file: File): Promise<{ deals: ParsedDeal[];
         for (const d of deals) {
           repCounts[d.rep] = (repCounts[d.rep] || 0) + 1;
         }
-        console.log("DEAL OWNER DEBUG:", {
+        console.log("=== DEAL OWNER DEBUG ===", {
           totalParsed: deals.length,
           totalRows,
+          skippedNoOwner,
           byRep: repCounts,
           sample: deals.slice(0, 5).map((d) => ({
             name: d.name,

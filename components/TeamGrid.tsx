@@ -5,6 +5,7 @@ import type { ParsedDeal } from "@/lib/hubspot";
 import type { BookedByRepMonth, TargetsByRepMonth } from "@/lib/types";
 import { REP_CONFIGS } from "@/lib/reps";
 import RepCard from "./RepCard";
+import RepYearView from "./RepYearView";
 import PipelineView from "./PipelineView";
 
 interface TeamGridProps {
@@ -31,7 +32,7 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
 
   return (
     <div>
-      {/* Rep cards — 4 column grid */}
+      {/* Rep cards — 4 column grid, each with independent year view */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {REP_CONFIGS.map((config) => {
           const repDeals = deals.filter((d) => d.rep === config.key);
@@ -39,18 +40,24 @@ export default function TeamGrid({ deals, booked, targets, onDealClick, onResear
             .filter((d) => d.cat !== "cw" && d.cat !== "cl")
             .reduce((sum, d) => sum + d.val, 0);
           return (
-            <RepCard
-              key={config.key}
-              config={config}
-              dealCount={repDeals.length}
-              pipelineVal={pipelineVal}
-              booked={booked}
-              targets={targets}
-              currentMonth={currentMonth}
-              selected={selectedRep === config.key}
-              dimmed={!!selectedRep && selectedRep !== config.key}
-              onSelect={() => handleRepSelect(config.key)}
-            />
+            <div key={config.key}>
+              <RepCard
+                config={config}
+                dealCount={repDeals.length}
+                pipelineVal={pipelineVal}
+                booked={booked}
+                targets={targets}
+                currentMonth={currentMonth}
+                selected={selectedRep === config.key}
+                dimmed={!!selectedRep && selectedRep !== config.key}
+                onSelect={() => handleRepSelect(config.key)}
+              />
+              <RepYearView
+                repKey={config.key}
+                booked={booked[config.key] || {}}
+                targets={targets[config.key] || {}}
+              />
+            </div>
           );
         })}
       </div>

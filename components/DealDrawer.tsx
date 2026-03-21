@@ -94,8 +94,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
   // --- Nudge banner dismiss state (session-only) ---
   const [dismissHealth, setDismissHealth] = useState(false);
-  const [dismissResearch, setDismissResearch] = useState(false);
-  const [dismissStageGate, setDismissStageGate] = useState(false);
   const meddicRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -115,8 +113,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
     setOutreachLogged(false);
     setOutreachToast(null);
     setDismissHealth(false);
-    setDismissResearch(false);
-    setDismissStageGate(false);
     scrollRef.current?.scrollTo({ top: 0 });
   }, [deal?.id]);
 
@@ -272,8 +268,6 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
   if (!deal) return null;
 
-  const hubspotUrl = `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL}/record/0-3/${deal.hsId}`;
-
   return (
     <>
       {/* Backdrop */}
@@ -335,109 +329,76 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
 
         {/* Scrollable content */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          {/* Nudge banners */}
+          {/* Combined smart banner */}
           {(() => {
             const health = dealHealthScore(deal);
-            const missingDocs: string[] = [];
-            if (deal.cat === "neg") {
-              if (deal.msa === "Not sent" || deal.msa === "Not signed") missingDocs.push("MSA not signed");
-              if (deal.credit === "Not sent" || deal.credit === "Not returned") missingDocs.push("Credit App not returned");
-              if (deal.sow === "Not sent" || deal.sow === "Not signed") missingDocs.push("SOW not signed");
-            }
+            const hasItems = health.score < 80;
+            const noResearch = !deal.hasResearch;
+            const showBanner = (hasItems || noResearch) && !dismissHealth;
+
+            if (!showBanner) return null;
+
+            const parts: string[] = [];
+            if (hasItems) parts.push(`${health.missing.length} items to review`);
+            if (noResearch) parts.push("No research on file");
+
             return (
-              <>
-                {/* Health nudge — amber */}
-                {health.score < 80 && !dismissHealth && (
-                  <div style={{
-                    background: "rgba(245,166,35,0.08)",
-                    borderBottom: "0.5px solid rgba(245,166,35,0.25)",
-                    padding: "8px 14px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}>
-                    <span style={{ fontSize: 12, flexShrink: 0 }}>⚠</span>
-                    <span style={{ fontSize: 10, color: "#F5A623", flex: 1 }}>
-                      {health.score < 50
-                        ? `Deal needs attention — ${health.missing.length} items missing before this can advance`
-                        : `${health.missing.length} items will strengthen this deal`}
-                    </span>
-                    <button
-                      onClick={() => meddicRef.current?.scrollIntoView({ behavior: "smooth" })}
-                      style={{ fontSize: 10, color: "#F5A623", fontWeight: 600, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
-                    >
-                      Review ↓
-                    </button>
-                    <button
-                      onClick={() => setDismissHealth(true)}
-                      style={{ fontSize: 12, color: "#F5A623", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1 }}
-                    >
-                      ✕
-                    </button>
-                  </div>
+              <div style={{
+                background: "rgba(245,166,35,0.08)",
+                borderBottom: "0.5px solid rgba(245,166,35,0.25)",
+                padding: "8px 14px",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}>
+                <span style={{ fontSize: 12, flexShrink: 0 }}>⚠</span>
+                <span style={{ fontSize: 10, color: "#F5A623", flex: 1 }}>
+                  {parts.join(" · ")}
+                </span>
+                {hasItems && (
+                  <button
+                    onClick={() => meddicRef.current?.scrollIntoView({ behavior: "smooth" })}
+                    style={{ fontSize: 10, color: "#F5A623", fontWeight: 600, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                  >
+                    Review ↓
+                  </button>
                 )}
-                {/* Research nudge — purple */}
-                {!deal.hasResearch && !dismissResearch && (
-                  <div style={{
-                    background: "rgba(167,139,250,0.08)",
-                    borderBottom: "0.5px solid rgba(167,139,250,0.2)",
-                    padding: "8px 14px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}>
-                    <span style={{ fontSize: 10, color: "#A78BFA", flex: 1 }}>
-                      No research on file — deep research recommended before next meeting
-                    </span>
-                    <button
-                      onClick={handleDeepResearch}
-                      style={{ fontSize: 10, color: "#A78BFA", fontWeight: 600, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
-                    >
-                      ✦ Launch Research →
-                    </button>
-                    <button
-                      onClick={() => setDismissResearch(true)}
-                      style={{ fontSize: 12, color: "#A78BFA", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1 }}
-                    >
-                      ✕
-                    </button>
-                  </div>
+                {noResearch && (
+                  <button
+                    onClick={handleDeepResearch}
+                    style={{ fontSize: 10, color: "#A78BFA", fontWeight: 600, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                  >
+                    Launch Research →
+                  </button>
                 )}
-                {/* Stage gate nudge — red (Negotiation only) */}
-                {deal.cat === "neg" && missingDocs.length > 0 && !dismissStageGate && (
-                  <div style={{
-                    background: "rgba(255,74,45,0.08)",
-                    borderBottom: "0.5px solid rgba(255,74,45,0.2)",
-                    padding: "8px 14px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}>
-                    <span style={{ fontSize: 10, color: "#FF4A2D", flex: 1 }}>
-                      Closing checklist incomplete — {missingDocs.join(" · ")}
-                    </span>
-                    <button
-                      onClick={() => setDismissStageGate(true)}
-                      style={{ fontSize: 12, color: "#FF4A2D", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1 }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </>
+                <button
+                  onClick={() => setDismissHealth(true)}
+                  style={{ fontSize: 12, color: "#F5A623", background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1 }}
+                >
+                  ✕
+                </button>
+              </div>
             );
           })()}
           <DrawerHero deal={deal} />
 
           <div className="px-6 pb-6">
-            {/* Section 1: MEDDIC */}
+            {/* Section 1: MEDDIC — auto-expand for early stages or when gaps exist */}
             <div ref={meddicRef} />
-            <DrawerSection title="MEDDIC" icon={IconMeddic}>
+            <DrawerSection
+              title="MEDDIC"
+              icon={IconMeddic}
+              forceOpen={
+                deal.cat === "leads" ||
+                Object.values(deal.meddic).some((v) => v !== "ok")
+              }
+              defaultOpen={deal.cat !== "cw"}
+            >
               <MeddicGrid meddic={deal.meddic} meddicNotes={deal.meddicNotes} />
             </DrawerSection>
 
-            {/* Section 2: Next Action */}
-            <DrawerSection title="Next Action" icon={IconAction}>
+            {/* Section 2: Next Action — auto-expand for all open deals */}
+            <DrawerSection title="Next Action" icon={IconAction} forceOpen={deal.cat !== "cw" && deal.cat !== "cl"}>
               {/* Row 1: CALL + Text Prospect + Open in HubSpot */}
               <div className="flex flex-wrap gap-2">
                 {/* CALL button */}
@@ -543,43 +504,28 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
                 </button>
               </div>
 
-              {/* Row 2: View Research Brief */}
-              {deal.hasResearch && (
+              {/* Row 2: Research button — toggles based on research status */}
+              {deal.hasResearch ? (
                 <button
                   onClick={() => setShowResearch(true)}
                   className="mt-2 w-full bg-[#7C3AED]/15 text-[#7C3AED] text-sm font-medium py-2 rounded-lg hover:bg-[#7C3AED]/25 transition-colors flex items-center justify-center gap-2"
                 >
                   <span>&#10022;</span> View Research Brief
                 </button>
+              ) : (
+                <button
+                  onClick={handleDeepResearch}
+                  className="mt-2 w-full text-sm font-medium py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  style={{
+                    background: "rgba(139, 92, 246, 0.15)",
+                    border: "1px solid rgba(139, 92, 246, 0.4)",
+                    color: "#A78BFA",
+                  }}
+                >
+                  <span>&#10022;</span> Launch Deep Research
+                </button>
               )}
             </DrawerSection>
-
-            {/* Deep Research trigger */}
-            <div className="mb-4">
-              <button
-                onClick={handleDeepResearch}
-                className="w-full text-left cursor-pointer transition-colors"
-                style={{
-                  background: deal.hasResearch ? "transparent" : "rgba(139, 92, 246, 0.15)",
-                  border: deal.hasResearch ? "1px solid rgba(139, 92, 246, 0.25)" : "1px solid rgba(139, 92, 246, 0.4)",
-                  color: deal.hasResearch ? "rgba(167, 139, 250, 0.6)" : "#A78BFA",
-                  borderRadius: 8,
-                  padding: "10px 14px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(139, 92, 246, 0.25)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = deal.hasResearch
-                    ? "transparent"
-                    : "rgba(139, 92, 246, 0.15)";
-                }}
-              >
-                {deal.hasResearch ? "↺ Update Research" : "✦ Launch Deep Research"}
-              </button>
-            </div>
 
             {/* Keep Warm section — only when nudgeRequired */}
             {(() => {
@@ -884,12 +830,20 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
             </DrawerSection>
 
             {/* Section 5: Contacts */}
-            <DrawerSection title="Contacts" icon={IconContacts}>
+            <DrawerSection title="Contacts" icon={IconContacts} defaultOpen={false}>
               <ContactsList contacts={deal.contacts} />
             </DrawerSection>
 
-            {/* Section 6: Document Status */}
-            <DrawerSection title="Document Status" icon={IconDocs}>
+            {/* Section 6: Document Status — auto-expand for Proposal/Negotiation or when docs missing */}
+            <DrawerSection
+              title="Document Status"
+              icon={IconDocs}
+              forceOpen={
+                deal.cat === "prop" || deal.cat === "neg" ||
+                [deal.nda, deal.msa, deal.sow, deal.credit].some((s) => s === "Not sent")
+              }
+              defaultOpen={false}
+            >
               <DocStatusGrid
                 nda={deal.nda}
                 msa={deal.msa}
@@ -901,7 +855,7 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
             </DrawerSection>
 
             {/* Section 7: Deal Details */}
-            <DrawerSection title="Deal Details" icon={IconDetails}>
+            <DrawerSection title="Deal Details" icon={IconDetails} defaultOpen={false}>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-navy/50 rounded-lg px-3 py-2.5">
                   <p className="text-muted text-[10px] uppercase tracking-wider">Stage</p>
@@ -924,17 +878,8 @@ export default function DealDrawer({ deal, onClose }: DealDrawerProps) {
               </div>
             </DrawerSection>
 
-            {/* Footer: Open in HubSpot */}
-            <div className="pt-4 border-t border-border">
-              <a
-                href={hubspotUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full text-center bg-navy/50 border border-border text-blue text-sm font-medium py-2.5 rounded-lg hover:bg-navy hover:border-blue/30 transition-colors"
-              >
-                &#x1F517; Open in HubSpot
-              </a>
-            </div>
+            {/* Footer spacer */}
+            <div className="pt-4" />
           </div>
         </div>
       </div>
