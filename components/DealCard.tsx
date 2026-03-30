@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { ParsedDeal } from "@/lib/hubspot";
 import { dealHealthScore, dealWarmth } from "@/lib/dealHealth";
+import { REP_PHOTOS } from "@/lib/repPhotos";
+import { REP_CONFIGS } from "@/lib/reps";
 
 interface DealCardProps {
   deal: ParsedDeal;
@@ -356,18 +358,19 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
         </div>
       </div>
 
-      {/* Footer: MEDDIC bar + AI button */}
+      {/* Footer: MEDDIC bar + rep avatar + AI button */}
       <div
         style={{
           padding: "6px 10px 8px 12px",
           display: "flex",
           alignItems: "flex-end",
           justifyContent: "space-between",
+          gap: 6,
         }}
       >
         {/* MEDDIC bar */}
         <div
-          style={{ position: "relative", flex: 1, marginRight: 8 }}
+          style={{ position: "relative", flex: 1, marginRight: 0 }}
           onMouseEnter={() => setShowHealthTip(true)}
           onMouseLeave={() => setShowHealthTip(false)}
         >
@@ -421,6 +424,46 @@ export default function DealCard({ deal, onClick, onAIClick, onResearchClick }: 
             </div>
           )}
         </div>
+
+        {/* Rep avatar */}
+        {(() => {
+          const repConfig = REP_CONFIGS.find((r) => r.key === deal.rep);
+          const photo = REP_PHOTOS[deal.rep];
+          const initials = repConfig
+            ? repConfig.name.split(" ").map((w) => w[0]).join("")
+            : deal.rep.slice(0, 2).toUpperCase();
+          const borderColor = repConfig?.borderColor || "#2A3F5C";
+          return (
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                border: `2px solid ${borderColor}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#F0F4F8",
+                backgroundColor: "#1C2F4A",
+                overflow: "hidden",
+                flexShrink: 0,
+              }}
+            >
+              {photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photo}
+                  alt={initials}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                initials
+              )}
+            </div>
+          );
+        })()}
 
         {/* AI button */}
         {deal.hasResearch ? (
