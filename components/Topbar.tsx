@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useRevenueData } from "@/lib/RevenueDataContext";
 import { ADCELLERANT_ICON_BASE64 } from "@/lib/logo-data";
+import { getGeneratedAt } from "@/lib/dataProvider";
 
 /* ── SVG Skylines ─────────────────────────────────────── */
 
@@ -338,10 +339,16 @@ export default function Topbar() {
     { label: "LONDON", time: times.london, date: cityDates.london, Skyline: LondonSkyline },
   ] as const;
 
-  const hubspotDisplay = formatUploadTimestamp(csvUploadedAt);
-  const revenueDisplay = formatUploadTimestamp(excelUploadedAt);
-  const hubspotShort = formatUploadTimestampShort(csvUploadedAt);
-  const revenueShort = formatUploadTimestampShort(excelUploadedAt);
+  // Use upload timestamp if available, otherwise fall back to master data timestamp
+  const masterTs = getGeneratedAt();
+  const masterFormatted = (() => {
+    const d = new Date(masterTs);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  })();
+  const hubspotDisplay = csvUploadedAt ? formatUploadTimestamp(csvUploadedAt) : masterFormatted;
+  const revenueDisplay = excelUploadedAt ? formatUploadTimestamp(excelUploadedAt) : masterFormatted;
+  const hubspotShort = csvUploadedAt ? formatUploadTimestampShort(csvUploadedAt) : masterFormatted;
+  const revenueShort = excelUploadedAt ? formatUploadTimestampShort(excelUploadedAt) : masterFormatted;
 
   const navBtnBase: React.CSSProperties = {
     fontFamily: orb,
@@ -514,21 +521,21 @@ export default function Topbar() {
               <span className="topbar-indicator" style={{ fontFamily: orb, color: "#6B7F96" }}>HubSpot</span>
               <span
                 className="topbar-indicator-val"
-                style={{ fontFamily: orb, color: csvUploadedAt ? "#2ECC8A" : "#F5A623" }}
+                style={{ fontFamily: orb, color: (csvUploadedAt || masterTs) ? "#2ECC8A" : "#F5A623" }}
               >
                 {/* Desktop: full timestamp, Mobile: time only */}
                 <span className="topbar-nav-label">{hubspotDisplay}</span>
-                <span style={{ display: "none" }} className="topbar-indicator-mobile">{csvUploadedAt ? hubspotShort : "—"}</span>
+                <span style={{ display: "none" }} className="topbar-indicator-mobile">{(csvUploadedAt || masterTs) ? hubspotShort : "—"}</span>
               </span>
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span className="topbar-indicator" style={{ fontFamily: orb, color: "#6B7F96" }}>Revenue</span>
               <span
                 className="topbar-indicator-val"
-                style={{ fontFamily: orb, color: excelUploadedAt ? "#2ECC8A" : "#F5A623" }}
+                style={{ fontFamily: orb, color: (excelUploadedAt || masterTs) ? "#2ECC8A" : "#F5A623" }}
               >
                 <span className="topbar-nav-label">{revenueDisplay}</span>
-                <span style={{ display: "none" }} className="topbar-indicator-mobile">{excelUploadedAt ? revenueShort : "—"}</span>
+                <span style={{ display: "none" }} className="topbar-indicator-mobile">{(excelUploadedAt || masterTs) ? revenueShort : "—"}</span>
               </span>
             </div>
           </div>

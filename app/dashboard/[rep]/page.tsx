@@ -1,5 +1,10 @@
-import { redirect } from "next/navigation";
+import RepDashboardClient from "./RepDashboardClient";
 
-export default function RepPage() {
-  redirect("/dashboard");
+interface RepPageProps {
+  params: Promise<{ rep: string }>;
+}
+
+export default async function RepPage({ params }: RepPageProps) {
+  const { rep } = await params;
+  return <RepDashboardClient repKey={rep} />;
 }
