@@ -124,22 +124,47 @@ export default function DashboardClient({ userEmail, userName }: DashboardClient
     return () => window.removeEventListener("adcellerant:refresh", handler);
   }, [loadDeals]);
 
-  // Data priority: CSV uploads > API deals > master data
+  // Data priority: CSV uploads > live HubSpot > master data
   const activeDeals = useMemo(() => {
-    if (hasUploadedDeals) return uploadedDeals;
-    if (state.deals.length > 0) return state.deals;
+    if (hasUploadedDeals && uploadedDeals.length > 0) return uploadedDeals;
+    // Only use API deals if they came from live HubSpot (not mock fallback)
+    if (state.deals.length > 0 && !state.hubspotUnavailable) return state.deals;
     return MASTER_DEALS;
-  }, [hasUploadedDeals, uploadedDeals, state.deals]);
+  }, [hasUploadedDeals, uploadedDeals, state.deals, state.hubspotUnavailable]);
 
-  // Revenue data priority: uploaded Excel/CSV > master data
+  // Revenue: always start with master data, merge uploaded data on top
   const effectiveBooked = useMemo(() => {
-    if (hasRevenueData) return bookedByRepMonth;
-    return MASTER_BOOKED;
+    const merged: Record<string, Record<string, number>> = {};
+    // Base layer: master data
+    for (const [rep, months] of Object.entries(MASTER_BOOKED)) {
+      merged[rep] = { ...months };
+    }
+    // Override layer: uploaded revenue data (if present)
+    if (hasRevenueData) {
+      for (const [rep, months] of Object.entries(bookedByRepMonth)) {
+        if (months && Object.keys(months).length > 0) {
+          merged[rep] = { ...(merged[rep] || {}), ...months };
+        }
+      }
+    }
+    return merged;
   }, [hasRevenueData, bookedByRepMonth]);
 
   const effectiveTargets = useMemo(() => {
-    if (hasRevenueData) return targetsByRepMonth;
-    return MASTER_TARGETS;
+    const merged: Record<string, Record<string, number>> = {};
+    // Base layer: master data
+    for (const [rep, months] of Object.entries(MASTER_TARGETS)) {
+      merged[rep] = { ...months };
+    }
+    // Override layer: uploaded targets (if present)
+    if (hasRevenueData) {
+      for (const [rep, months] of Object.entries(targetsByRepMonth)) {
+        if (months && Object.keys(months).length > 0) {
+          merged[rep] = { ...(merged[rep] || {}), ...months };
+        }
+      }
+    }
+    return merged;
   }, [hasRevenueData, targetsByRepMonth]);
 
   const isMock = false; // master data is always available

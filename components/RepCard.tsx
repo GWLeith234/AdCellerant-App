@@ -70,13 +70,13 @@ export default function RepCard({
   // Current month stats
   const curBooked = repBooked[currentMonth] || 0;
   const curTarget = repTargets[currentMonth] || 0;
-  const curAtt = curTarget > 0 ? Math.round((curBooked / curTarget) * 100) : 0;
+  const curAtt = curTarget > 0 ? parseFloat(((curBooked / curTarget) * 100).toFixed(1)) : 0;
 
   // Next month stats
   const { currentMonthLong, nextMonthLong, nextMonthShort } = getMonthNames();
   const nxtBooked = repBooked[nextMonthShort] || 0;
   const nxtTarget = repTargets[nextMonthShort] || 0;
-  const nxtAtt = nxtTarget > 0 ? Math.round((nxtBooked / nxtTarget) * 100) : 0;
+  const nxtAtt = nxtTarget > 0 ? parseFloat(((nxtBooked / nxtTarget) * 100).toFixed(1)) : 0;
 
   // Q1 booked (Jan + Feb + Mar)
   const q1Months = ["Jan", "Feb", "Mar"];
@@ -86,6 +86,7 @@ export default function RepCard({
 
   const isRamp = config.isRamp;
   const hasData = curBooked > 0 || curTarget > 0 || nxtBooked > 0 || nxtTarget > 0;
+  const hasCurMonthData = curBooked > 0 || curTarget > 0;
 
   const handleClick = () => {
     onSelect?.();
@@ -160,18 +161,18 @@ export default function RepCard({
           <div className="grid grid-cols-4" style={{ gap: 4 }}>
             <RepStatTile
               label="BKD"
-              value={hasData ? formatShort(curBooked) : "—"}
+              value={hasCurMonthData ? formatShort(curBooked) : "—"}
               color={curBooked > 0 ? "text-orange" : "text-muted"}
             />
             <RepStatTile
               label="TGT"
-              value={hasData ? formatShort(curTarget) : "—"}
+              value={hasCurMonthData ? formatShort(curTarget) : "—"}
               color="text-white"
             />
             <RepStatTile
               label="ATT"
-              value={isRamp && !hasData ? "Ramp" : (hasData && curTarget > 0 ? `${curAtt}%` : "—")}
-              color={isRamp && !hasData ? "text-amber" : (hasData && curTarget > 0 ? achievedColor(curAtt) : "text-muted")}
+              value={isRamp && !hasCurMonthData ? "Ramp" : (curTarget > 0 ? `${curAtt}%` : "—")}
+              color={isRamp && !hasCurMonthData ? "text-amber" : (curTarget > 0 ? achievedColor(curAtt) : "text-muted")}
             />
             <RepStatTile
               label="DAYS"

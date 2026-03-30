@@ -38,18 +38,39 @@ export default function RepDashboardClient({ repKey }: RepDashboardClientProps) 
   const masterRep = getRep(repKey);
 
   const allDeals = useMemo(() => {
-    if (hasUploadedDeals) return uploadedDeals;
+    if (hasUploadedDeals && uploadedDeals.length > 0) return uploadedDeals;
     return MASTER_DEALS;
   }, [hasUploadedDeals, uploadedDeals]);
 
+  // Revenue: always start with master data, merge uploaded data on top
   const effectiveBooked = useMemo(() => {
-    if (hasRevenueData) return bookedByRepMonth;
-    return MASTER_BOOKED;
+    const merged: Record<string, Record<string, number>> = {};
+    for (const [rep, months] of Object.entries(MASTER_BOOKED)) {
+      merged[rep] = { ...months };
+    }
+    if (hasRevenueData) {
+      for (const [rep, months] of Object.entries(bookedByRepMonth)) {
+        if (months && Object.keys(months).length > 0) {
+          merged[rep] = { ...(merged[rep] || {}), ...months };
+        }
+      }
+    }
+    return merged;
   }, [hasRevenueData, bookedByRepMonth]);
 
   const effectiveTargets = useMemo(() => {
-    if (hasRevenueData) return targetsByRepMonth;
-    return MASTER_TARGETS;
+    const merged: Record<string, Record<string, number>> = {};
+    for (const [rep, months] of Object.entries(MASTER_TARGETS)) {
+      merged[rep] = { ...months };
+    }
+    if (hasRevenueData) {
+      for (const [rep, months] of Object.entries(targetsByRepMonth)) {
+        if (months && Object.keys(months).length > 0) {
+          merged[rep] = { ...(merged[rep] || {}), ...months };
+        }
+      }
+    }
+    return merged;
   }, [hasRevenueData, targetsByRepMonth]);
 
   if (!config) {
