@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { fetchAllDeals } from "@/lib/hubspot";
-import { MOCK_DEALS } from "@/lib/mockDeals";
+import { getAllDeals } from "@/lib/dataProvider";
 
 export async function GET() {
   try {
     const hasToken = !!process.env.HUBSPOT_ACCESS_TOKEN;
     if (!hasToken) {
-      // Return mock data for development when no token is configured
-      return NextResponse.json({ deals: MOCK_DEALS, mock: true });
+      // Return master data deals when no HubSpot token is configured
+      return NextResponse.json({ deals: getAllDeals(), mock: true });
     }
 
     const deals = await fetchAllDeals();

@@ -1,10 +1,11 @@
 "use client";
 
-import { useReducer, useEffect, useCallback, useState, useRef } from "react";
+import { useReducer, useEffect, useCallback, useState, useRef, useMemo } from "react";
 import type { AppAction } from "@/lib/types";
 import type { ParsedDeal } from "@/lib/hubspot";
 import { useRevenueData } from "@/lib/RevenueDataContext";
 import { useDealData } from "@/lib/DealDataContext";
+import { getAllDeals, getMasterBooked, getMasterTargets } from "@/lib/dataProvider";
 import DealGridSkeleton from "./DealGridSkeleton";
 import TeamGrid from "./TeamGrid";
 import DealDrawer from "./DealDrawer";
@@ -62,9 +63,14 @@ interface DashboardClientProps {
   userName: string;
 }
 
+// Master data deals (loaded once at module level)
+const MASTER_DEALS = getAllDeals();
+const MASTER_BOOKED = getMasterBooked();
+const MASTER_TARGETS = getMasterTargets();
+
 export default function DashboardClient({ userEmail, userName }: DashboardClientProps) {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { bookedByRepMonth, targetsByRepMonth } = useRevenueData();
+  const { bookedByRepMonth, targetsByRepMonth, hasRevenueData } = useRevenueData();
   const { uploadedDeals, hasUploadedDeals } = useDealData();
 
   const [selectedDeal, setSelectedDeal] = useState<ParsedDeal | null>(null);
@@ -74,7 +80,7 @@ export default function DashboardClient({ userEmail, userName }: DashboardClient
   // Track last refresh timestamp
   const lastRefreshRef = useRef<string>("");
 
-  // Fetch deals
+  // Fetch deals from API (fallback)
   const loadDeals = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -99,10 +105,8 @@ export default function DashboardClient({ userEmail, userName }: DashboardClient
         dispatch({ type: "SET_DEALS", deals: cached });
         dispatch({ type: "SET_HUBSPOT_UNAVAILABLE", unavailable: true });
       } else {
-        dispatch({
-          type: "SET_DEALS_ERROR",
-          error: err instanceof Error ? err.message : "Failed to load deals",
-        });
+        // Fall through — master data will be used
+        dispatch({ type: "SET_DEALS", deals: [] });
       }
     } finally {
       setRefreshing(false);
@@ -120,9 +124,50 @@ export default function DashboardClient({ userEmail, userName }: DashboardClient
     return () => window.removeEventListener("adcellerant:refresh", handler);
   }, [loadDeals]);
 
-  // Use uploaded deals if available, otherwise fall back to API-loaded deals
-  const activeDeals = hasUploadedDeals ? uploadedDeals : state.deals;
-  const isMock = hasUploadedDeals ? false : state.hubspotUnavailable;
+  // Data priority: CSV uploads > live HubSpot > master data
+  const activeDeals = useMemo(() => {
+    if (hasUploadedDeals && uploadedDeals.length > 0) return uploadedDeals;
+    // Only use API deals if they came from live HubSpot (not mock fallback)
+    if (state.deals.length > 0 && !state.hubspotUnavailable) return state.deals;
+    return MASTER_DEALS;
+  }, [hasUploadedDeals, uploadedDeals, state.deals, state.hubspotUnavailable]);
+
+  // Revenue: always start with master data, merge uploaded data on top
+  const effectiveBooked = useMemo(() => {
+    const merged: Record<string, Record<string, number>> = {};
+    // Base layer: master data
+    for (const [rep, months] of Object.entries(MASTER_BOOKED)) {
+      merged[rep] = { ...months };
+    }
+    // Override layer: uploaded revenue data (if present)
+    if (hasRevenueData) {
+      for (const [rep, months] of Object.entries(bookedByRepMonth)) {
+        if (months && Object.keys(months).length > 0) {
+          merged[rep] = { ...(merged[rep] || {}), ...months };
+        }
+      }
+    }
+    return merged;
+  }, [hasRevenueData, bookedByRepMonth]);
+
+  const effectiveTargets = useMemo(() => {
+    const merged: Record<string, Record<string, number>> = {};
+    // Base layer: master data
+    for (const [rep, months] of Object.entries(MASTER_TARGETS)) {
+      merged[rep] = { ...months };
+    }
+    // Override layer: uploaded targets (if present)
+    if (hasRevenueData) {
+      for (const [rep, months] of Object.entries(targetsByRepMonth)) {
+        if (months && Object.keys(months).length > 0) {
+          merged[rep] = { ...(merged[rep] || {}), ...months };
+        }
+      }
+    }
+    return merged;
+  }, [hasRevenueData, targetsByRepMonth]);
+
+  const isMock = false; // master data is always available
 
   return (
     <div>
@@ -131,37 +176,19 @@ export default function DashboardClient({ userEmail, userName }: DashboardClient
         rep={null}
         userEmail={userEmail}
         refreshing={refreshing}
-        dealsLoading={state.dealsLoading && !hasUploadedDeals}
+        dealsLoading={state.dealsLoading && !hasUploadedDeals && MASTER_DEALS.length === 0}
         isMock={isMock}
         onRefresh={() => loadDeals(true)}
       />
 
-      {/* Error banner */}
-      {state.dealsError && !isMock && !hasUploadedDeals && (
-        <div className="mb-4">
-          <span className="text-orange text-xs bg-orange/10 border border-orange/30 px-2.5 py-1 rounded-lg">
-            {state.dealsError}
-          </span>
-        </div>
-      )}
-
-      {/* Deals loading skeleton */}
-      {state.dealsLoading && !hasUploadedDeals && (
-        <div className="mb-6">
-          <DealGridSkeleton count={8} columns={4} />
-        </div>
-      )}
-
-      {/* Team view */}
-      {(!state.dealsLoading || hasUploadedDeals) && (
-        <TeamGrid
-          deals={activeDeals}
-          booked={bookedByRepMonth}
-          targets={targetsByRepMonth}
-          onDealClick={setSelectedDeal}
-          onResearchClick={setResearchDeal}
-        />
-      )}
+      {/* Team view — always render since master data is available */}
+      <TeamGrid
+        deals={activeDeals}
+        booked={effectiveBooked}
+        targets={effectiveTargets}
+        onDealClick={setSelectedDeal}
+        onResearchClick={setResearchDeal}
+      />
 
       {/* Deal drawer */}
       <DealDrawer deal={selectedDeal} onClose={() => setSelectedDeal(null)} />

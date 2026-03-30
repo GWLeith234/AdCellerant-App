@@ -62,17 +62,23 @@ export default function PipelineView({ deals, repFilter, onDealClick, onResearch
     [cwDeals, cwPeriod],
   );
 
+  // Active deals only (exclude closed won/lost from main tabs)
+  const activeRepDeals = useMemo(
+    () => repDeals.filter((d) => d.cat !== "cw" && d.cat !== "cl"),
+    [repDeals],
+  );
+
   // Counts per category
   const counts = useMemo(() => {
-    const c = { all: repDeals.length, neg: 0, prop: 0, ent: 0, leads: 0 };
-    for (const d of repDeals) {
+    const c = { all: activeRepDeals.length, neg: 0, prop: 0, ent: 0, leads: 0 };
+    for (const d of activeRepDeals) {
       if (d.cat === "neg") c.neg++;
       else if (d.cat === "prop") c.prop++;
       else if (d.cat === "ent") c.ent++;
       else if (d.cat === "leads") c.leads++;
     }
     return c;
-  }, [repDeals]);
+  }, [activeRepDeals]);
 
   const tabs: Tab[] = [
     { key: "all", label: "Int Book", count: counts.all },
@@ -84,10 +90,13 @@ export default function PipelineView({ deals, repFilter, onDealClick, onResearch
   ];
 
   const filteredDeals = useMemo(() => {
-    if (activeTab === "all") return repDeals;
-    if (activeTab === "cw") return cwFiltered;
-    return repDeals.filter((d) => d.cat === activeTab);
-  }, [repDeals, cwFiltered, activeTab]);
+    let result: ParsedDeal[];
+    if (activeTab === "all") result = activeRepDeals;
+    else if (activeTab === "cw") result = cwFiltered;
+    else result = activeRepDeals.filter((d) => d.cat === activeTab);
+    // Sort by amount descending (largest first)
+    return [...result].sort((a, b) => b.val - a.val);
+  }, [activeRepDeals, cwFiltered, activeTab]);
 
   const pillBase: React.CSSProperties = {
     borderRadius: 20,
